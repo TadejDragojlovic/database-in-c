@@ -1,74 +1,14 @@
 #include "buffer.h"
+#include "command.h"
+#include "statement.h"
 
-// success or failure of meta commands
-typedef enum {
-    META_COMMAND_SUCCESS,
-    META_COMMAND_UNRECOGNIZED_COMMAND
-} MetaCommandResult;
+#include <stdbool.h>
 
-// success or failure of statement
-typedef enum {
-    PREPARE_SUCCESS,
-    PREPARE_UNRECOGNIZED_STATEMENT
-} PrepareResult;
-
-// statement type
-typedef enum {
-    STATEMENT_INSERT, 
-    STATEMENT_SELECT
-} StatementType;
-
-// a statement struct
-typedef struct {
-    StatementType type;
-} Statement;
-
+// prints prompt
 void print_prompt() {
     printf("db > ");
 }
 
-/* GETLINE(char** lineptr, size_t* n, FILE* stream);
-lineptr : a pointer to the variable we use to point to the buffer containing the read line. 
-          If it set to NULL it is mallocatted by getline and should thus be freed by the user, even if the command fails.
-
-n : a pointer to the variable we use to save the size of allocated buffer.
-
-stream : the input stream to read from. We’ll be reading from standard input.
-
-return value : the number of bytes read, which may be less than the size of the buffer.
-*/
-
-MetaCommandResult do_meta_command(InputBuffer* input_buffer) {
-    if(strncmp(input_buffer->buffer, ".exit", 5) == 0) {
-        exit(EXIT_SUCCESS);
-    } else {
-        return META_COMMAND_UNRECOGNIZED_COMMAND;
-    }
-}
-
-PrepareResult prepare_statement(InputBuffer* input_buffer, Statement* statement) {
-    if(strncmp(input_buffer->buffer, "insert", 6) == 0) {
-        statement->type = STATEMENT_INSERT;
-        return PREPARE_SUCCESS;
-    } else if (strncmp(input_buffer->buffer, "select", 6) == 0) {
-        statement->type = STATEMENT_SELECT;
-        return PREPARE_SUCCESS;
-    }
-
-    return PREPARE_UNRECOGNIZED_STATEMENT;
-}
-
-// after compiled statement, this function executes given statements
-void execute_statement(Statement* statement) {
-    switch(statement->type) {
-        case(STATEMENT_INSERT):
-            printf("Compiler reads INSERT.\n");
-            break;
-        case(STATEMENT_SELECT):
-            printf("Compiler reads SELECT.\n");
-            break;
-    }
-}
 
 int main(int argc, char* argv[]) {
     InputBuffer* input_buffer = new_input_buffer();
@@ -82,7 +22,7 @@ int main(int argc, char* argv[]) {
             switch(do_meta_command(input_buffer)) {
                 case (META_COMMAND_SUCCESS):
                     continue;
-                case (META_COMMAND_UNRECOGNIZED_COMMAND):
+                case (META_COMMAND_UNRECOGNIZED):
                     printf("Unrecognized command '%s'\n", input_buffer->buffer);
                     continue;
             }
