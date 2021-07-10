@@ -17,7 +17,7 @@ typedef enum {
 
 // statement struct
 typedef struct {
-    Statement type;
+    StatementType type;
 } Statement;
 
 PrepareResult prepare_statement(InputBuffer* input_buffer, Statement* statement);

@@ -2,6 +2,7 @@
 #define COMMAND_H
 
 #include "buffer.h"
+#include <string.h>
 
 // success/failure of meta commands
 typedef enum {
