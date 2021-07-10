@@ -1,11 +1,16 @@
-FILENAME1 = database
-FILENAME2 = buffer
+CC = gcc
+CFLAGS = -I$(IDIR)
+
+IDIR = ./include/
+SRCDIR = ./src/
 EXENAME = db
+
+SOURCES = $(SRCDIR)*.c
 
 all: compile run clean
 
 compile: 
-	gcc $(FILENAME1).c $(FILENAME2).c -o $(EXENAME)
+	$(CC) $(SOURCES) $(CFLAGS) -o $(EXENAME)
 
 run:
 	./$(EXENAME)
