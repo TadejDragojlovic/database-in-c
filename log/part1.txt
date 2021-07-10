@@ -1,0 +1,51 @@
+1. Introduction and Setting up the REPL
+
+Sources:
+    - SQLite architecture: https://www.sqlite.org/arch.html
+    - Lemon parser generator: https://www.sqlite.org/lemon.html
+    - Code generator explanation: https://www.techopedia.com/definition/17062/code-generator
+    - Parse tree explanation: https://www.youtube.com/watch?v=L_Y6gAaLQmk
+    - Virtual machine (bytecode engine) explanation: https://www.hwaci.com/sw/sqlite/opcode.html
+    - B-Trees: https://www.cpp.edu/~ftang/courses/CS241/notes/b-tree.htm
+
+
+
+* A query goes through a chain of components in order to retrieve or modify the data
+
+Front-end of sqlite architecture:
+    - What is a tokenizer?
+        -> Tokenizer takes a stream of text, and breaks it into tokens, usually by looking for whitespace,
+            thus breaking the whole string into (usually) words (tokens)
+
+    - What is a parser?
+        -> A parser takes input in the form of a sequence of tokens, and it assigns meaning to tokens based on their context (grammar provided),
+            (bukvalno daje znacenje tokenima)
+        -> A parse tree is a visualization of the proccess of deriving (<-obtaining something from it) a string.
+           It is based on specific kind of grammar (in original sql3 the grammar file that drives Lemon (a parser generator for sql3) is called `parse.y` and is used to generate corresponding parser C-code)
+
+    - What is a code generator?
+        -> After the parser assembles tokens into a parse tree, the code generator runs to analyze the parse tree and generates bytecode that performs the work of the SQL statement.
+           The 'prepared statement' object is a container for this bytecode. 
+           (prepared statement object -> instance of this object represents a single SQL statement that has been compiled into binary form and is ready to be evaluated,
+            think of each SQL statement as a computer program, source code is the original SQL text, a prepared statement object is the compiled code)
+
+
+* Front-end is a SQL query, the output is sqlite virtual machine bytecode (basically a compiled program that can operate on the database)
+
+Back-end of sqlite architecture:
+    - What is a virtual machine?
+        -> Heart of the SQL, it uses translated SQL statements (bytecoded program) and then running that bytecode in a virtual machine, where it processess the statement
+    
+    - What is B-tree?
+        -> B-tree is a data structure that is used in SQLite, it maintains sorted data and allows for many operations on them (search, sequential access, insertion, deletion...)
+           It is optimized for reading and writing large blocks of data
+
+    - What is a pager?
+        -> Pager handles all the requests to read or write pages of data. It also keeps a cache of recently-accessed pages in memory, and determines when those pages need to be written back to disk.
+           Requests to information on disks are in fixed-sized pages (default `page_size` is 4096 bytes, but it can range from 512 to 65536 bytes)
+
+    - What is an OS interface?
+        -> In order to provide portability across operating systems, SQLite uses abstract object called the VFS. Each VFS provides methods for opening, reading, writing, and closing files on disk, and for 
+            other OS-specific task such as finding the current time, or obtaining randomness to initialize the built-in pseudo-random number generator
+    
+* REPL -> READ - EXECUTE - PRINT - LOOP
