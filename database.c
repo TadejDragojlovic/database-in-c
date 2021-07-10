@@ -1,13 +1,4 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdbool.h>
-#include <string.h>
-
-typedef struct {
-    char* buffer;
-    size_t buffer_length;
-    ssize_t input_length;
-} InputBuffer;
+#include "buffer.h"
 
 // success or failure of meta commands
 typedef enum {
@@ -32,37 +23,8 @@ typedef struct {
     StatementType type;
 } Statement;
 
-InputBuffer* new_input_buffer() {
-    InputBuffer* input_buffer = (InputBuffer*) malloc(sizeof(InputBuffer));
-
-    input_buffer->buffer = NULL;
-    input_buffer->buffer_length = 0;
-    input_buffer->input_length = 0;
-
-    return input_buffer;
-}
-
 void print_prompt() {
     printf("db > ");
-}
-
-// function that reads input from user
-void read_input(InputBuffer* input_buffer) {
-    ssize_t bytes_read = getline(&(input_buffer)->buffer, &(input_buffer)->buffer_length, stdin); 
-    /* 
-    getline()` reads an entire line from stream, storing the address of the buffer containing the text into *lineptr.
-    the buffer is null-terminated and includes the newline character, if one was found
-    source: 'https://man7.org/linux/man-pages/man3/getline.3.html'
-    */
-
-    if(bytes_read <= 0) {
-        printf("Error reading input\n");
-        exit(EXIT_FAILURE);
-    }
-
-    // ignore newline character
-    input_buffer->input_length = bytes_read - 1;
-    input_buffer->buffer[bytes_read-1] = 0;
 }
 
 /* GETLINE(char** lineptr, size_t* n, FILE* stream);
@@ -82,11 +44,6 @@ MetaCommandResult do_meta_command(InputBuffer* input_buffer) {
     } else {
         return META_COMMAND_UNRECOGNIZED_COMMAND;
     }
-}
-
-void close_input_buffer(InputBuffer* input_buffer) {
-    free(input_buffer->buffer);
-    free(input_buffer);
 }
 
 PrepareResult prepare_statement(InputBuffer* input_buffer, Statement* statement) {
