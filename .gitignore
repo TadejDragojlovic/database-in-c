@@ -1,3 +1,3 @@
 .vscode
 gitignore_fix.txt
-.DS_Store.exe
+**/.DS_Store
