@@ -7,3 +7,6 @@ Sources:
 * Non-SQL statements like `.exit` are called *meta-commands*
 
 We handle meta-commands in a different function (since the start with a dot)
+
+* Enumeration in C
+    -> User defined data type in C with a set of values
