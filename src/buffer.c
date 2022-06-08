@@ -31,7 +31,7 @@ void read_input(InputBuffer* input_buffer) {
 }
 
 // function that frees memory from input
-void close_input(InputBuffer* input_buffer) {
+void free_input_buffer(InputBuffer* input_buffer) {
     free(input_buffer->buffer);
     free(input_buffer);
 }
