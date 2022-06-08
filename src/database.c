@@ -11,14 +11,18 @@ void print_prompt() {
 
 
 int main(int argc, char* argv[]) {
+    // create the input buffer
     InputBuffer* input_buffer = new_input_buffer();
 
     while (true) {
         print_prompt();
+
+        // reading input into the buffer
         read_input(input_buffer);
 
         // meta-commands all start with a dot, so we handle them in a separate function
         if(input_buffer->buffer[0] == '.') {
+            // `do_meta_command()` function checks input for meta commands
             switch(do_meta_command(input_buffer)) {
                 case (META_COMMAND_SUCCESS):
                     continue;
@@ -28,8 +32,9 @@ int main(int argc, char* argv[]) {
             }
         }
 
-        // Here we convert the line of input into our internal presentation of a statement (kinda like what we would get from sqlite front-end)
         Statement statement;
+        // `prepare_statement()` checks input for valid a valid statement and returns appopriate result (PrepareResult enum)
+        // it also assigns the `StatementType` to the given statement container
         switch (prepare_statement(input_buffer, &statement)) {
             case (PREPARE_SUCCESS): // If the statement succeeds to run, it will break from this switch
                 break;
@@ -38,7 +43,7 @@ int main(int argc, char* argv[]) {
                 continue;
         }
 
-        // Lastly, we pass the prepared statement to `execute_statement` (this function is our virtual machine)
+        // lastly, we pass the prepared statement to `execute_statement` (this function is our virtual machine)
         execute_statement(&statement);
         printf("Executed.\n");
     }
