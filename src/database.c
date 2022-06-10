@@ -1,6 +1,7 @@
 #include "buffer.h"
 #include "command.h"
 #include "statement.h"
+#include "table.h"
 
 #include <stdbool.h>
 
@@ -9,8 +10,33 @@ void print_prompt() {
     printf("db > ");
 }
 
-
 int main(int argc, char* argv[]) {
+
+    /*
+    // TESTING SERIALIZATION AND DESERIALIZATION
+    Row* test_row = malloc(sizeof(Row));
+    test_row->id = 0;
+    strcpy(test_row->username, "test");
+    strcpy(test_row->email, "test@gmail.com");
+
+    void* destination = malloc(sizeof(Row));
+
+    row_serialization(test_row, destination);
+
+    printf("%d %s %s\n", test_row->id, test_row->username, test_row->email);
+    printf("%u\n", *(uint32_t *)destination+ID_OFFSET);
+
+    Row* new_row = malloc(sizeof(Row));
+
+    row_deserialization(destination, new_row);
+
+    printf("%d %s %s\n", new_row->id, new_row->username, new_row->email);
+    */
+
+    // Create a table
+    Table* table = create_table();
+    printf("New table created.\n");
+
     // create the input buffer
     InputBuffer* input_buffer = new_input_buffer();
 
@@ -23,7 +49,7 @@ int main(int argc, char* argv[]) {
         // meta-commands all start with a dot, so we handle them in a separate function
         if(input_buffer->buffer[0] == '.') {
             // `do_meta_command()` function checks input for meta commands
-            switch(do_meta_command(input_buffer)) {
+            switch(do_meta_command(input_buffer, table)) {
                 case (META_COMMAND_SUCCESS):
                     continue;
                 case (META_COMMAND_UNRECOGNIZED):
@@ -38,13 +64,24 @@ int main(int argc, char* argv[]) {
         switch (prepare_statement(input_buffer, &statement)) {
             case (PREPARE_SUCCESS): // If the statement succeeds to run, it will break from this switch
                 break;
+            case (PREPARE_SYNTAX_ERROR):
+                printf("Syntax error. Couldn't parse the statement.\n");
+                continue;
             case (PREPARE_UNRECOGNIZED_STATEMENT): // If the statement is unrecognized, it repeats until a known keyword is inputed
                 printf("Unrecognized keyword at start of '%s'.\n", input_buffer->buffer);
                 continue;
         }
 
         // lastly, we pass the prepared statement to `execute_statement` (this function is our virtual machine)
-        execute_statement(&statement);
-        printf("Executed.\n");
+
+        switch (execute_statement(&statement, table)) {
+            case (EXECUTE_SUCCESS):
+                printf("TABLE ROWS: %d\n", table->row_count);
+                printf("Executed.\n");
+                break;
+            case (EXECUTE_TABLE_FULL):
+                printf("ERROR. Table is full.\n");
+                break;
+        }
     }
 }
