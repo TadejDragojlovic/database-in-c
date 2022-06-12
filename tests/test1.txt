@@ -1,2 +1,0 @@
-insert 1 cstack foo@gmail.com
-select
