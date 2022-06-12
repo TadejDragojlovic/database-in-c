@@ -35,7 +35,7 @@ int main(int argc, char* argv[]) {
 
     // Create a table
     Table* table = create_table();
-    printf("New table created.\n");
+    // printf("New table created.\n");
 
     // create the input buffer
     InputBuffer* input_buffer = new_input_buffer();
@@ -67,6 +67,9 @@ int main(int argc, char* argv[]) {
             case (PREPARE_SYNTAX_ERROR):
                 printf("Syntax error. Couldn't parse the statement.\n");
                 continue;
+            case (PREPARE_STRING_TOO_LONG):
+                printf("String inserted is too long.\n");
+                continue;
             case (PREPARE_UNRECOGNIZED_STATEMENT): // If the statement is unrecognized, it repeats until a known keyword is inputed
                 printf("Unrecognized keyword at start of '%s'.\n", input_buffer->buffer);
                 continue;
@@ -76,8 +79,8 @@ int main(int argc, char* argv[]) {
 
         switch (execute_statement(&statement, table)) {
             case (EXECUTE_SUCCESS):
-                printf("TABLE ROWS: %d\n", table->row_count);
-                printf("Executed.\n");
+                // printf("TABLE ROWS: %d\n", table->row_count);
+                // printf("Executed.\n");
                 break;
             case (EXECUTE_TABLE_FULL):
                 printf("ERROR. Table is full.\n");

@@ -1,28 +1,39 @@
 #include "statement.h"
 
 // compiler
+PrepareResult prepare_insert(InputBuffer* input_buffer, Statement* statement) {
+    /* inserting into our 1-table database might look something like this `insert 1 placeholder_name placeholder_email` */
+    /* we need to *parse* arguments for this specific statement */
+
+    /* parsing arguments using strtok */
+    char* keyword = strtok(input_buffer->buffer, " ");
+    char* id_string = strtok(NULL, " ");
+    char* username_string = strtok(NULL, " ");
+    char* email_string = strtok(NULL, " ");
+
+    if(id_string == NULL || username_string == NULL || email_string == NULL)
+        return PREPARE_STRING_TOO_LONG;
+
+    int id = atoi(id_string);
+    if(strlen(username_string) > COLUMN_USERNAME_SIZE || strlen(email_string) > COLUMN_EMAIL_SIZE)
+        return PREPARE_STRING_TOO_LONG;
+
+    statement->row_to_insert.id = id;
+    strcpy(statement->row_to_insert.username, username_string);
+    strcpy(statement->row_to_insert.email, email_string);
+
+
+    // printf("%d %d %d\n", ID_SIZE, USERNAME_SIZE, EMAIL_SIZE);
+    // printf("%d %d %d\n", ID_OFFSET, USERNAME_OFFSET, EMAIL_OFFSET);
+    // printf("TOTAL ROW SIZE: %d\n", ROW_SIZE);
+
+    statement->type = STATEMENT_INSERT;
+    return PREPARE_SUCCESS;
+}
+
 PrepareResult prepare_statement(InputBuffer* input_buffer, Statement* statement) {
     if(strncmp(input_buffer->buffer, "insert", 6) == 0) {
-        /* inserting into our 1-table database might look something like this `insert 1 placeholder_name placeholder_email` */
-        /* we need to *parse* arguments for this specific statement */
-
-        /* parsing argments and storing them to the row_to_insert Row */
-        int args = sscanf(input_buffer->buffer, "insert %d %s %s", &(statement->row_to_insert.id), 
-                          statement->row_to_insert.username, statement->row_to_insert.email);
-
-        // printf("%d\n", args);
-
-        if(args != 3) {
-            printf("SYNTAX ERROR.\n");
-            return PREPARE_SYNTAX_ERROR;
-        }
-
-        printf("%d %d %d\n", ID_SIZE, USERNAME_SIZE, EMAIL_SIZE);
-        // printf("%d %d %d\n", ID_OFFSET, USERNAME_OFFSET, EMAIL_OFFSET);
-        // printf("TOTAL ROW SIZE: %d\n", ROW_SIZE);
-
-        statement->type = STATEMENT_INSERT;
-        return PREPARE_SUCCESS;
+        return prepare_insert(input_buffer, statement);
     } else if(strncmp(input_buffer->buffer, "select", 6) == 0) {
         statement->type = STATEMENT_SELECT;
         return PREPARE_SUCCESS;
@@ -30,6 +41,7 @@ PrepareResult prepare_statement(InputBuffer* input_buffer, Statement* statement)
 
     return PREPARE_UNRECOGNIZED_STATEMENT;
 }
+
 
 
 // VIRTUAL MACHINE PART
@@ -51,6 +63,8 @@ ExecuteResult execute_insert(Statement* statement, Table* table) {
 
     row_serialization(row_to_insert, row_slot(table, table->row_count));
     table->row_count++;
+
+    printf("Inserted.\n");
 
     return EXECUTE_SUCCESS;
 }
