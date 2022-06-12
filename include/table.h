@@ -9,7 +9,7 @@
 #define COLUMN_USERNAME_SIZE 32
 #define COLUMN_EMAIL_SIZE 255
 
-#define TABLE_MAX_PAGES 10
+#define TABLE_MAX_PAGES 100
 
 // `(Struct*)0` => struct pointer
 // `(((Struct*)0)->Attribute)` => pointer to that specific attribute of a given struct
@@ -17,9 +17,13 @@
 
 typedef struct {
     uint32_t id;
-    char username[COLUMN_USERNAME_SIZE];
-    char email[COLUMN_EMAIL_SIZE];
+    // adding +1 to the total size of `username` and `email` for the null character
+    char username[COLUMN_USERNAME_SIZE+1];
+    char email[COLUMN_EMAIL_SIZE+1];
 } Row;
+
+// TODO: Try doing the row structure without serialization and deserialization
+//  maybe have table->rows[row_count] where each element will be a row* structure
 
 // Table structure
 typedef struct {
