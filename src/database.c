@@ -70,6 +70,9 @@ int main(int argc, char* argv[]) {
             case (PREPARE_STRING_TOO_LONG):
                 printf("String inserted is too long.\n");
                 continue;
+            case (PREPARE_NEGATIVE_ID):
+                printf("Negative ID inserted. ID must be a positive integer.\n");
+                continue;
             case (PREPARE_UNRECOGNIZED_STATEMENT): // If the statement is unrecognized, it repeats until a known keyword is inputed
                 printf("Unrecognized keyword at start of '%s'.\n", input_buffer->buffer);
                 continue;

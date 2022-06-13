@@ -11,17 +11,23 @@ PrepareResult prepare_insert(InputBuffer* input_buffer, Statement* statement) {
     char* username_string = strtok(NULL, " ");
     char* email_string = strtok(NULL, " ");
 
+    // checking for wrong input
     if(id_string == NULL || username_string == NULL || email_string == NULL)
-        return PREPARE_STRING_TOO_LONG;
+        return PREPARE_SYNTAX_ERROR;
 
     int id = atoi(id_string);
+    // checking for negative id error
+    if(id < 0)
+        return PREPARE_NEGATIVE_ID;
+
+    // checking for buffer overflow when inserting username or email
     if(strlen(username_string) > COLUMN_USERNAME_SIZE || strlen(email_string) > COLUMN_EMAIL_SIZE)
         return PREPARE_STRING_TOO_LONG;
+
 
     statement->row_to_insert.id = id;
     strcpy(statement->row_to_insert.username, username_string);
     strcpy(statement->row_to_insert.email, email_string);
-
 
     // printf("%d %d %d\n", ID_SIZE, USERNAME_SIZE, EMAIL_SIZE);
     // printf("%d %d %d\n", ID_OFFSET, USERNAME_OFFSET, EMAIL_OFFSET);
