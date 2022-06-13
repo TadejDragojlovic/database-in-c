@@ -2,4 +2,5 @@
 log/
 gitignore_fix.txt
 test.c
+__pycache__
 **/.DS_Store
