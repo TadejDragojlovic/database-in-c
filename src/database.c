@@ -11,6 +11,10 @@ void print_prompt() {
 }
 
 int main(int argc, char* argv[]) {
+    if (argc < 2) {
+        printf("Provide a database filename.\n");
+        exit(EXIT_FAILURE);
+    }
 
     /*
     // TESTING SERIALIZATION AND DESERIALIZATION
@@ -32,9 +36,10 @@ int main(int argc, char* argv[]) {
 
     printf("%d %s %s\n", new_row->id, new_row->username, new_row->email);
     */
+    char* filename = argv[1];   
 
     // Create a table
-    Table* table = create_table();
+    Table* table = db_open(filename);
     // printf("New table created.\n");
 
     // create the input buffer
