@@ -36,18 +36,20 @@ def test_driver(test_input) -> list:
     clean_output = raw_output.splitlines()
 
     # last input is an empty row, so output for it is 'Error reading output'
+    if test_input[-1] == ".exit":
+        return clean_output
     return clean_output[:-1]
 
 
-def test_evaluation(output, expected, test_number):
+def test_evaluation(output, expected):
     '''
     main function that runs the test
-    [void]
+    [bool]
     '''
     if(output == expected):
-        print(colorama.Fore.GREEN + f"TEST NUMBER ({test_number+1}) SUCCESSFULLY PASSED." + colorama.Fore.RESET)
+        return True
     else:
-        print(colorama.Fore.RED + "TEST FAILED." + colorama.Fore.RESET)
+        return False
 
 
 if __name__ == "__main__":
@@ -56,12 +58,36 @@ if __name__ == "__main__":
 
     # RUNNING TESTS
     for i in range(len(tests.TESTS)):
-        test_output = test_driver(tests.TESTS[i][0])
-        test_expectation = tests.TESTS[i][1]
+
+        # `n` => number of times './db' is ran in a single test (for multipart testing like writing records to files)
+        n = len(tests.TESTS[i]['inputs'])
+        
+        passing = 1
+        for j in range(n):
+            test_output = test_driver(tests.TESTS[i]['inputs'][j])
+            test_expectation = tests.TESTS[i]['expectations'][j]
+
+            if test_evaluation(test_output, test_expectation) != True:
+                passing = 0
+        
+        # test case result 
+        if passing:
+            print(colorama.Fore.GREEN + f"TEST NUMBER ({i+1}) SUCCESSFULLY PASSED." + colorama.Fore.RESET)
+        else:
+            print(test_output)
+            # print(test_expectation)
+            print(colorama.Fore.RED + "TEST FAILED." + colorama.Fore.RESET)
+
+
+        # try:
+        #     test_output = test_driver(tests.TESTS[i][0])
+        #     test_expectation = tests.TESTS[i][1]
+        # except:
+        #     pass
 
         # print(test_output)
         # print(test_expectation)
         
-        test_evaluation(test_output, test_expectation, i)
+        # test_evaluation(test_output, test_expectation, i)
 
     cleanup()

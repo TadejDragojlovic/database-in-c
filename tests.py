@@ -1,56 +1,80 @@
-
 TESTS = []
 
 
-# TEST 1
+#---------
+# TEST 1 |
+#---------
 _input = ['insert 1 cstack foo@gmail.com', 'select']
-to_expect = ['Inserted.', '(1, cstack, foo@gmail.com)']
+_expect = ['Inserted.', '(1, cstack, foo@gmail.com)']
 
-TESTS.append([_input, to_expect])
+TESTS.append({'inputs': [_input], 'expectations': [_expect]})
 
-# TEST 2 (more complex, automating the making of a test case)
+
+#-------------------------------------------------------------
+# TEST 2 (more complex, automating the making of a test case)|
+#-------------------------------------------------------------
 # REMINDER: if 'select' is executed and the table is empty, it won't output anything
 _input = ['select']
 
 # list starts of empty, because select doesn't output anything on an empty table
-to_expect = []
+_expect = []
 
 n_of_inserts = 4
 
-# adding to _input and to_expect simultaneously to save time
+# adding to _input and _expect simultaneously to save time
 for i in range(n_of_inserts):
-    to_expect.append('Inserted.')
+    _expect.append('Inserted.')
 for i in range(1, n_of_inserts+1):
     _input.append(f'insert {i} test{i} foo{i}@gmail.com')
-    to_expect.append(f'({i}, test{i}, foo{i}@gmail.com)')
+    _expect.append(f'({i}, test{i}, foo{i}@gmail.com)')
 _input.append('select')
 
-TESTS.append([_input, to_expect])
+TESTS.append({'inputs': [_input], 'expectations': [_expect]})
 
 
-# TEST 3 (testing table row limit)
+#----------------------------------
+# TEST 3 (testing table row limit)|
+#----------------------------------
 _input = []
-to_expect = []
+_expect = []
 
 n = 1301
 for i in range(1, n+1):
     _input.append(f'insert {i} user{i} email{i}@gmail.com')
 
-to_expect = ['Inserted.' for x in range(n-1)]
-to_expect.append('ERROR. Table is full.')
+_expect = ['Inserted.' for x in range(n-1)]
+_expect.append('ERROR. Table is full.')
 
-TESTS.append([_input, to_expect])
+TESTS.append({'inputs': [_input], 'expectations': [_expect]})
 
 
-# TEST 4 (testing for buffer overflow when inserting)
+#-----------------------------------------------------
+# TEST 4 (testing for buffer overflow when inserting)|
+#-----------------------------------------------------
 _input = [f"insert 1 {'a'*33} {'b'*256}", "select"]
-to_expect = ["String inserted is too long."]
+_expect = ["String inserted is too long."]
 
-TESTS.append([_input, to_expect])
+TESTS.append({'inputs': [_input], 'expectations': [_expect]})
 
 
-# TEST 5 (testing for negative ids when inserting)
+#--------------------------------------------------
+# TEST 5 (testing for negative ids when inserting)|
+#--------------------------------------------------
 _input = ["insert -1 some_username foo@gmail.com"]
-to_expect = ["Negative ID inserted. ID must be a positive integer."]
+_expect = ["Negative ID inserted. ID must be a positive integer."]
 
-TESTS.append([_input, to_expect])
+TESTS.append({'inputs': [_input], 'expectations': [_expect]})
+
+
+#--------------------------------
+# TEST 6 (saving data to a file)|
+#--------------------------------
+# MULTIPART TEST (runs './db' more than once)
+# Tests if data is written on a file correctly and saved
+_input = ["insert 1 cstack foo@gmail.com", ".exit"]
+_expect = ["Inserted."]
+
+_input1 = ["select"]
+_expect1 = ["(1, cstack, foo@gmail.com)"]
+
+TESTS.append({'inputs': [_input, _input1], 'expectations': [_expect, _expect1]})
