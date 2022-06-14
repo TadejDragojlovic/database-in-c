@@ -3,8 +3,13 @@
 
 #include <stdint.h>
 #include <string.h>
-// for `offsetof()`
-#include <stddef.h>
+#include <stddef.h> // for `offsetof()`
+#include <stdlib.h>
+#include <stdio.h>
+#include <fcntl.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <errno.h>
 
 #define COLUMN_USERNAME_SIZE 32
 #define COLUMN_EMAIL_SIZE 255
@@ -25,11 +30,19 @@ typedef struct {
 // TODO: Try doing the row structure without serialization and deserialization
 //  maybe have table->rows[row_count] where each element will be a row* structure
 
+// Pager structure
+typedef struct {
+    int file_descriptor;
+    uint32_t file_size;
+    void* pages[TABLE_MAX_PAGES];
+} Pager;
+
 // Table structure
 typedef struct {
     uint32_t row_count;
-    void* pages[TABLE_MAX_PAGES];
+    Pager* pager;
 } Table;
+
 
 
 // Row data sizes
@@ -52,8 +65,14 @@ static const uint32_t TABLE_MAXIMUM_ROWS = MAXIMUM_ROWS_PER_PAGE * TABLE_MAX_PAG
 
 void row_serialization(Row* source, void* destination);
 void row_deserialization(void* source, Row* destination);
+void* get_page(Pager* pager, uint32_t designated_page_num);
 void* row_slot(Table* table, uint32_t row_index);
-Table* create_table();
 void free_table(Table* table);
+Table* db_open(const char* filename);
+void db_close(Table* table);
+
+// pager handling
+Pager* pager_open(const char* filename);
+void pager_flush(Pager* pager, uint32_t page_number, uint32_t size);
 
 #endif
