@@ -7,9 +7,9 @@ EXENAME = db
 
 SOURCES = $(SRCDIR)*.c
 
-all: compile run clean
+all: build
 
-compile: 
+build: 
 	$(CC) $(SOURCES) $(CFLAGS) -o $(EXENAME)
 
 run:
