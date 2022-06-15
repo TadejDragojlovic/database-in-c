@@ -1,9 +1,11 @@
 #ifndef COMMAND_H
 #define COMMAND_H
 
+#include <string.h>
+
 #include "buffer.h"
 #include "table.h"
-#include <string.h>
+#include "btree.h"
 
 // success/failure of meta commands
 typedef enum {
