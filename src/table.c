@@ -15,22 +15,6 @@ void row_deserialization(void* source, Row* destination) {
     memcpy(&(destination->email), source+EMAIL_OFFSET, EMAIL_SIZE);
 }
 
-// TODO: Explain this function
-/* returns a pointer to an address in the memory where the row with its 'row_index' is/should be */
-void* row_slot(Table* table, uint32_t row_index) {
-    // Get the index of the page where the inputed row with its 'row_index' is located at
-    uint32_t designated_page_num = row_index / MAXIMUM_ROWS_PER_PAGE;
-
-    void* page = get_page(table->pager, designated_page_num);
-
-    // row offset for a page
-    uint32_t row_offset_in_page = row_index % MAXIMUM_ROWS_PER_PAGE;
-    // offset for the row in the whole table
-    uint32_t byte_offset = row_offset_in_page * ROW_SIZE;
-
-    return page + byte_offset;
-}
-
 /* returns the address to the raw page data (bytes from memory) of a given page number */
 void* get_page(Pager* pager, uint32_t designated_page_num) {
     if (designated_page_num > TABLE_MAX_PAGES) {
@@ -125,7 +109,9 @@ void db_close(Table* table) {
     free(table);
 }
 
-// Pager handling ---------
+
+/* Pager handling --------- */
+
 /* opens a file and assigns values to the Pager structure (file_descriptor, file_size, pages) */
 Pager* pager_open(const char* filename) {
     int fd = open(filename,
@@ -171,5 +157,51 @@ void pager_flush(Pager* pager, uint32_t page_number, uint32_t size) {
     if (bytes_written == -1) {
         printf("Error writing: %d.\n", errno);
         exit(EXIT_FAILURE);
+    }
+}
+
+
+/* Cursor handling --------- */
+
+/* Creates a cursor object that points to the first row of the table */
+Cursor* table_start(Table* table) {
+    Cursor* cursor = malloc(sizeof(Cursor));
+    cursor->table = table;
+    cursor->row_number = 0;
+    cursor->end_of_table = (table->row_count == 0);
+
+    return cursor;
+}
+
+/* Creates a cursor object that points to the last row of the table */
+Cursor* table_end(Table* table) {
+    Cursor* cursor = malloc(sizeof(Cursor));
+    cursor->table = table;
+    cursor->row_number = table->row_count;
+    cursor->end_of_table = true;
+
+    return cursor;
+}
+
+/* returns a pointer to an address in the memory where the row which the cursor is pointing to is */
+void* cursor_position(Cursor* cursor) { // this function used to be `row_slot()`
+    // Get the index of the page where the inputed row with its 'row_index' is located at
+    uint32_t designated_page_num = cursor->row_number / MAXIMUM_ROWS_PER_PAGE;
+
+    void* page = get_page(cursor->table->pager, designated_page_num);
+
+    // row offset for a page
+    uint32_t row_offset_in_page = cursor->row_number % MAXIMUM_ROWS_PER_PAGE;
+    // offset for the row in the whole table
+    uint32_t byte_offset = row_offset_in_page * ROW_SIZE;
+
+    return page + byte_offset;
+}
+
+/* advances the cursor to the next row */
+void cursor_advance(Cursor* cursor) {
+    cursor->row_number++;
+    if (cursor->row_number >= cursor->table->row_count) {
+        cursor->end_of_table = true;
     }
 }

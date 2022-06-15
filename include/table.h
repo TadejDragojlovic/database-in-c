@@ -10,6 +10,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <errno.h>
+#include <stdbool.h>
 
 #define COLUMN_USERNAME_SIZE 32
 #define COLUMN_EMAIL_SIZE 255
@@ -43,6 +44,12 @@ typedef struct {
     Pager* pager;
 } Table;
 
+// Cursor structure
+typedef struct {
+    Table* table;
+    uint32_t row_number;
+    bool end_of_table; // Represents the position one past the last element (useful when we want to insert a new row)
+} Cursor;
 
 
 // Row data sizes
@@ -66,13 +73,17 @@ static const uint32_t TABLE_MAXIMUM_ROWS = MAXIMUM_ROWS_PER_PAGE * TABLE_MAX_PAG
 void row_serialization(Row* source, void* destination);
 void row_deserialization(void* source, Row* destination);
 void* get_page(Pager* pager, uint32_t designated_page_num);
-void* row_slot(Table* table, uint32_t row_index);
-void free_table(Table* table);
 Table* db_open(const char* filename);
 void db_close(Table* table);
 
 // pager handling
 Pager* pager_open(const char* filename);
 void pager_flush(Pager* pager, uint32_t page_number, uint32_t size);
+
+// cursor handling
+Cursor* table_start(Table* table);
+Cursor* table_end(Table* table);
+void* cursor_position(Cursor* cursor); // this function used to be `row_slot()`
+void cursor_advance(Cursor* cursor);
 
 #endif
