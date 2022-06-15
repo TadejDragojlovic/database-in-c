@@ -66,21 +66,28 @@ ExecuteResult execute_insert(Statement* statement, Table* table) {
         return EXECUTE_TABLE_FULL;
 
     Row* row_to_insert = &(statement->row_to_insert);
+    Cursor* cursor = table_end(table);
 
-    row_serialization(row_to_insert, row_slot(table, table->row_count));
+    row_serialization(row_to_insert, cursor_position(cursor));
     table->row_count++;
 
+    free(cursor);
     printf("Inserted.\n");
 
     return EXECUTE_SUCCESS;
 }
 
 ExecuteResult execute_select(Statement* prepared_statement, Table* table) {
+    Cursor* cursor = table_start(table);
+
     Row row;
-    for(int i=0;i<table->row_count;i++) {
-        row_deserialization(row_slot(table, i), &row);
+    while(!(cursor->end_of_table)) {
+        row_deserialization(cursor_position(cursor), &row);
         print_row(&row);
+        cursor_advance(cursor);
     }
+
+    free(cursor);
 
     return EXECUTE_SUCCESS;
 }
