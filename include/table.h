@@ -35,19 +35,21 @@ typedef struct {
 typedef struct {
     int file_descriptor;
     uint32_t file_size;
+    uint32_t page_count;
     void* pages[TABLE_MAX_PAGES];
 } Pager;
 
 // Table structure
 typedef struct {
-    uint32_t row_count;
+    uint32_t root_page_num;
     Pager* pager;
 } Table;
 
 // Cursor structure
 typedef struct {
     Table* table;
-    uint32_t row_number;
+    uint32_t page_number;
+    uint32_t cell_number;
     bool end_of_table; // Represents the position one past the last element (useful when we want to insert a new row)
 } Cursor;
 
@@ -65,8 +67,6 @@ static const uint32_t ROW_SIZE = ID_SIZE+USERNAME_SIZE+EMAIL_SIZE;
 
 // Page constants
 static const uint32_t PAGE_SIZE = 4096;
-static const uint32_t MAXIMUM_ROWS_PER_PAGE = PAGE_SIZE/ROW_SIZE;
-static const uint32_t TABLE_MAXIMUM_ROWS = MAXIMUM_ROWS_PER_PAGE * TABLE_MAX_PAGES;
 
 
 
@@ -78,7 +78,7 @@ void db_close(Table* table);
 
 // pager handling
 Pager* pager_open(const char* filename);
-void pager_flush(Pager* pager, uint32_t page_number, uint32_t size);
+void pager_flush(Pager* pager, uint32_t page_number);
 
 // cursor handling
 Cursor* table_start(Table* table);
