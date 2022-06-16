@@ -1,4 +1,5 @@
 #include "table.h"
+#include "btree.h"
 
 /* Copy values from some 'Row' object to the block of memory (serialize the data) */
 void row_serialization(Row* source, void* destination) {
@@ -55,11 +56,15 @@ and fills the table with that cached data */
 Table* db_open(const char* filename) {
     Pager* pager = pager_open(filename);
 
-    uint32_t row_count = pager->file_size / ROW_SIZE;
-
     Table* table = malloc(sizeof(Table));
     table->pager = pager;
-    table->row_count = row_count;
+    table->root_page_num = 0;
+
+    // This means that the database file is empty
+    if(pager->page_count == 0) {
+        void* root_node = get_page(pager, 0);
+        initialize_leaf_node(root_node);
+    }
 
     return table;
 }
@@ -121,10 +126,10 @@ Pager* pager_open(const char* filename) {
 
     pager->file_descriptor = fd;
     pager->file_size = file_size;
-    pager->page_count = (file_length / PAGE_SIZE);
+    pager->page_count = (file_size / PAGE_SIZE);
 
     // ! 'file_length' needs to be divisible with 'PAGE_SIZE', otherwise it means that there was trouble writing down the full pages
-    if(file_length % PAGE_SIZE != 0) {
+    if(file_size % PAGE_SIZE != 0) {
         printf("Db file is not a whole number of pages. Corrupt file.\n");
         exit(EXIT_FAILURE);
     }
@@ -195,7 +200,7 @@ void* cursor_position(Cursor* cursor) { // this function used to be `row_slot()`
     // Get the index of the page where the inputed row with its 'row_index' is located at
     uint32_t page_num = cursor->page_number;
 
-    void* page = get_page(cursor->table->pager, designated_page_num);
+    void* page = get_page(cursor->table->pager, page_num);
 
     return leaf_node_value(page, cursor->cell_number);
 }
@@ -204,9 +209,9 @@ void* cursor_position(Cursor* cursor) { // this function used to be `row_slot()`
 void cursor_advance(Cursor* cursor) {
     void* node = get_page(cursor->table->pager, cursor->page_number);
 
-    cursor->cell_num++;
+    cursor->cell_number++;
 
-    if(cursor->cell_num >= (*leaf_node_num_cells(node))) {
+    if(cursor->cell_number >= (*leaf_node_num_cells(node))) {
         cursor->end_of_table = true;
     }
 }
