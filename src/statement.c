@@ -1,4 +1,5 @@
 #include "statement.h"
+#include "btree.h"
 
 // compiler
 PrepareResult prepare_insert(InputBuffer* input_buffer, Statement* statement) {
@@ -62,14 +63,15 @@ ExecuteResult execute_statement(Statement* statement, Table* table) {
 }
 
 ExecuteResult execute_insert(Statement* statement, Table* table) {
-    if (table->row_count >= TABLE_MAXIMUM_ROWS)
+    void* node = get_page(table->pager, table->root_page_num);
+    if ((*leaf_node_num_cells(node)) >= LEAF_NODE_MAX_CELLS) {
         return EXECUTE_TABLE_FULL;
+    }
 
     Row* row_to_insert = &(statement->row_to_insert);
     Cursor* cursor = table_end(table);
 
-    row_serialization(row_to_insert, cursor_position(cursor));
-    table->row_count++;
+    leaf_node_insert(cursor, row_to_insert->id, row_to_insert);
 
     free(cursor);
     printf("Inserted.\n");
