@@ -16,26 +16,6 @@ int main(int argc, char* argv[]) {
         exit(EXIT_FAILURE);
     }
 
-    /*
-    // TESTING SERIALIZATION AND DESERIALIZATION
-    Row* test_row = malloc(sizeof(Row));
-    test_row->id = 0;
-    strcpy(test_row->username, "test");
-    strcpy(test_row->email, "test@gmail.com");
-
-    void* destination = malloc(sizeof(Row));
-
-    row_serialization(test_row, destination);
-
-    printf("%d %s %s\n", test_row->id, test_row->username, test_row->email);
-    printf("%u\n", *(uint32_t *)destination+ID_OFFSET);
-
-    Row* new_row = malloc(sizeof(Row));
-
-    row_deserialization(destination, new_row);
-
-    printf("%d %s %s\n", new_row->id, new_row->username, new_row->email);
-    */
     char* filename = argv[1];   
 
     // Create a table
@@ -87,8 +67,10 @@ int main(int argc, char* argv[]) {
 
         switch (execute_statement(&statement, table)) {
             case (EXECUTE_SUCCESS):
-                // printf("TABLE ROWS: %d\n", table->row_count);
                 // printf("Executed.\n");
+                break;
+            case (EXECUTE_DUPLICATE_KEY):
+                printf("Error: Inserted id already exists in the table.\n");
                 break;
             case (EXECUTE_TABLE_FULL):
                 printf("ERROR. Table is full.\n");
