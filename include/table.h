@@ -12,6 +12,7 @@
 #include <errno.h>
 #include <stdbool.h>
 
+
 #define COLUMN_USERNAME_SIZE 32
 #define COLUMN_EMAIL_SIZE 255
 
@@ -21,15 +22,13 @@
 // `(((Struct*)0)->Attribute)` => pointer to that specific attribute of a given struct
 #define size_of_attribute(Struct, Attribute) sizeof(((Struct*)0)->Attribute)
 
+// Row structure
 typedef struct {
     uint32_t id;
     // adding +1 to the total size of `username` and `email` for the null character
     char username[COLUMN_USERNAME_SIZE+1];
     char email[COLUMN_EMAIL_SIZE+1];
 } Row;
-
-// TODO: Try doing the row structure without serialization and deserialization
-//  maybe have table->rows[row_count] where each element will be a row* structure
 
 // Pager structure
 typedef struct {
@@ -41,7 +40,7 @@ typedef struct {
 
 // Table structure
 typedef struct {
-    uint32_t root_page_num;
+    uint32_t root_page_number;
     Pager* pager;
 } Table;
 
@@ -60,7 +59,7 @@ static const uint32_t USERNAME_SIZE  = size_of_attribute(Row, username);
 static const uint32_t EMAIL_SIZE = size_of_attribute(Row, email);
 
 // Row data memory offset
-static const uint32_t ID_OFFSET = offsetof(Row, id);
+static const uint32_t ID_OFFSET = 0;
 static const uint32_t USERNAME_OFFSET = offsetof(Row, username);
 static const uint32_t EMAIL_OFFSET = offsetof(Row, email);
 static const uint32_t ROW_SIZE = ID_SIZE+USERNAME_SIZE+EMAIL_SIZE;
@@ -70,9 +69,9 @@ static const uint32_t PAGE_SIZE = 4096;
 
 
 
-void row_serialization(Row* source, void* destination);
-void row_deserialization(void* source, Row* destination);
-void* get_page(Pager* pager, uint32_t designated_page_num);
+void serialize_row(Row* source, void* destination);
+void deserialize_row(void* source, Row* destination);
+void* get_page(Pager* pager, uint32_t page_number);
 Table* db_open(const char* filename);
 void db_close(Table* table);
 
@@ -82,7 +81,7 @@ void pager_flush(Pager* pager, uint32_t page_number);
 
 // cursor handling
 Cursor* table_start(Table* table);
-Cursor* table_end(Table* table);
+Cursor* table_find(Table* table, uint32_t key);
 void* cursor_position(Cursor* cursor); // this function used to be `row_slot()`
 void cursor_advance(Cursor* cursor);
 

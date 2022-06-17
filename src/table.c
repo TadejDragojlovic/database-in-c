@@ -2,14 +2,14 @@
 #include "btree.h"
 
 /* Copy values from some 'Row' object to the block of memory (serialize the data) */
-void row_serialization(Row* source, void* destination) {
+void serialize_row(Row* source, void* destination) {
     memcpy(destination+ID_OFFSET, &(source->id), ID_SIZE);
     memcpy(destination+USERNAME_OFFSET, &(source->username), USERNAME_SIZE);
     memcpy(destination+EMAIL_OFFSET, &(source->email), EMAIL_SIZE);
 }
 
 /* Copy values from the memory block into a 'Row' object (deserialize the data) */
-void row_deserialization(void* source, Row* destination) {
+void deserialize_row(void* source, Row* destination) {
     // passing addresses to memcpy (destination, source, size_t n)
     memcpy(&(destination->id), source+ID_OFFSET, ID_SIZE);
     memcpy(&(destination->username), source+USERNAME_OFFSET, USERNAME_SIZE);
@@ -17,38 +17,37 @@ void row_deserialization(void* source, Row* destination) {
 }
 
 /* returns the address to the raw page data (bytes from memory) of a given page number */
-void* get_page(Pager* pager, uint32_t designated_page_num) {
-    if (designated_page_num > TABLE_MAX_PAGES) {
-        printf("Tried to fetch a page that is out of bounds.\n");
+void* get_page(Pager* pager, uint32_t page_number) {
+    if (page_number > TABLE_MAX_PAGES) {
+        printf("Tried to fetch page number out of bounds. %d > %d\n", page_number, TABLE_MAX_PAGES);
         exit(EXIT_FAILURE);
     }
 
-    // if the page is empty, we need to create it
-    if (pager->pages[designated_page_num] == NULL) {
-        void* page = malloc(sizeof(PAGE_SIZE));
+    if (pager->pages[page_number] == NULL) {
+        // Cache miss. Allocate memory and load from file.
+        void* page = malloc(PAGE_SIZE);
+        uint32_t num_pages = pager->file_size / PAGE_SIZE;
 
-        uint32_t number_of_pages = pager->file_size / PAGE_SIZE;
-
-        // while working with the file if we went over the current page size
-        // when saving we need to round it up and add another page (saving a partial page at the end of the file)
+        // We might save a partial page at the end of the file
         if (pager->file_size % PAGE_SIZE)
-            number_of_pages += 1;
+            num_pages += 1;
 
-        if (designated_page_num <= number_of_pages) {
-            lseek(pager->file_descriptor, designated_page_num * PAGE_SIZE, SEEK_SET);
+        if (page_number <= num_pages) {
+            lseek(pager->file_descriptor, page_number * PAGE_SIZE, SEEK_SET);
             ssize_t bytes_read = read(pager->file_descriptor, page, PAGE_SIZE);
-            if(bytes_read == -1) {
-                printf("Error while trying to read the file: %d\n", errno);
+            if (bytes_read == -1) {
+                printf("Error reading file: %d\n", errno);
                 exit(EXIT_FAILURE);
             }
         }
-        pager->pages[designated_page_num] = page;
 
-        if(number_of_pages >= pager->page_count)
-            pager->page_count++;
+        pager->pages[page_number] = page;
+
+        if (page_number >= pager->page_count)
+            pager->page_count = page_number + 1;
     }
 
-    return pager->pages[designated_page_num];
+    return pager->pages[page_number];
 }
 
 /* immediately calls 'pager_open()' that reads data from the database file
@@ -58,10 +57,9 @@ Table* db_open(const char* filename) {
 
     Table* table = malloc(sizeof(Table));
     table->pager = pager;
-    table->root_page_num = 0;
 
-    // This means that the database file is empty
-    if(pager->page_count == 0) {
+    if (pager->page_count == 0) {
+        // New database file. Initialize page 0 as leaf node.
         void* root_node = get_page(pager, 0);
         initialize_leaf_node(root_node);
     }
@@ -75,10 +73,11 @@ and close the database file at the end */
 void db_close(Table* table) {
     Pager* pager = table->pager;
 
-    for (uint32_t i=0; i<pager->page_count; i++) {
-        if (pager->pages[i] == NULL)
-            continue;
-
+    for (uint32_t i = 0; i < pager->page_count; i++) {
+        if (pager->pages[i] == NULL) {
+          continue;
+        }
+        /*printf("FREEING 1.\n");*/
         pager_flush(pager, i);
         free(pager->pages[i]);
         pager->pages[i] = NULL;
@@ -87,21 +86,21 @@ void db_close(Table* table) {
     // closing the database file
     int result = close(pager->file_descriptor);
     if (result == -1) {
-        printf("Error closing the database file.\n");
+        printf("Error closing db file.\n");
         exit(EXIT_FAILURE);
     }
 
     // Free memory
-    for (uint32_t i=0; i<TABLE_MAX_PAGES;i++) {
+    for (uint32_t i = 0; i < TABLE_MAX_PAGES; i++) {
         void* page = pager->pages[i];
-        if (page != NULL) {
+        if (page) {
+            /* REMINDER:  This code probably doesn't ever run, test more */
+            /*printf("FREEING 2.\n");*/
             free(page);
             pager->pages[i] = NULL;
         }
     }
-
     free(pager);
-    free(table);
 }
 
 
@@ -110,32 +109,34 @@ void db_close(Table* table) {
 /* opens a file and assigns values to the Pager structure (file_descriptor, file_size, pages) */
 Pager* pager_open(const char* filename) {
     int fd = open(filename,
-                O_RDWR |      // Read/Write mode
-                    O_CREAT,  // Create file if it does not exist
-                S_IWUSR |     // User write permission
-                 S_IRUSR);   // User read permission
+                  O_RDWR |    // Read/Write mode
+                  O_CREAT,    // Create file if it does not exist
+                  S_IWUSR |   // User write permission
+                  S_IRUSR);   // User read permission
 
     if (fd == -1) {
-        printf("Failed to open the database file.\n");
+        printf("Unable to open file\n");
         exit(EXIT_FAILURE);
     }
 
-    off_t file_size = lseek(fd, 0, SEEK_END); // lseek() returns the length of a file from the beggining up till the given offset in 'off_t'
+    // lseek() returns the length of a file from the beggining up till the given offset in 'off_t'
+    off_t file_size = lseek(fd, 0, SEEK_END);
+
 
     Pager* pager = malloc(sizeof(Pager));
-
     pager->file_descriptor = fd;
     pager->file_size = file_size;
     pager->page_count = (file_size / PAGE_SIZE);
 
-    // ! 'file_length' needs to be divisible with 'PAGE_SIZE', otherwise it means that there was trouble writing down the full pages
-    if(file_size % PAGE_SIZE != 0) {
+    // ! 'file_size' needs to be divisible with 'PAGE_SIZE', otherwise it means that there was trouble writing down the full pages
+    if (file_size % PAGE_SIZE != 0) {
         printf("Db file is not a whole number of pages. Corrupt file.\n");
         exit(EXIT_FAILURE);
     }
 
-    for(uint32_t i = 0; i < TABLE_MAX_PAGES; i++)
+    for (uint32_t i = 0; i < TABLE_MAX_PAGES; i++) {
         pager->pages[i] = NULL;
+    }
 
     return pager;
 }
@@ -169,49 +170,46 @@ void pager_flush(Pager* pager, uint32_t page_number) {
 Cursor* table_start(Table* table) {
     Cursor* cursor = malloc(sizeof(Cursor));
     cursor->table = table;
-    cursor->page_number = table->root_page_num;
+    cursor->page_number = table->root_page_number;
     cursor->cell_number = 0;
 
-    void* root_node = get_page(table->pager, table->root_page_num);
-    uint32_t num_cells = *leaf_node_num_cells(root_node);
+    void* root_node = get_page(table->pager, table->root_page_number);
 
+    uint32_t num_cells = *leaf_node_num_cells(root_node);
     cursor->end_of_table = (num_cells == 0);
 
     return cursor;
 }
 
 /* Creates a cursor object that points to the last row of the table */
-Cursor* table_end(Table* table) {
-    Cursor* cursor = malloc(sizeof(Cursor));
-    cursor->table = table;
-    cursor->page_number = table->root_page_num;
+Cursor* table_find(Table* table, uint32_t key) {
+    uint32_t root_page_number = table->root_page_number;
+    void* root_node = get_page(table->pager, root_page_number);
 
-    void* root_node = get_page(table->pager, table->root_page_num);
-    uint32_t num_cells = *leaf_node_num_cells(root_node);
-
-    cursor->cell_number = num_cells;
-    cursor->end_of_table = true;
-
-    return cursor;
+    if (get_node_type(root_node) == NODE_LEAF)
+        return leaf_node_find(table, root_page_number, key);
+    else {
+        /* TODO: */
+        printf("Need to implement searching an internal node.\n");
+        exit(EXIT_FAILURE);
+    }
 }
 
 /* returns a pointer to an address in the memory where the row which the cursor is pointing to is */
-void* cursor_position(Cursor* cursor) { // this function used to be `row_slot()`
-    // Get the index of the page where the inputed row with its 'row_index' is located at
-    uint32_t page_num = cursor->page_number;
-
-    void* page = get_page(cursor->table->pager, page_num);
+void* cursor_position(Cursor* cursor) {
+    uint32_t page_number = cursor->page_number;
+    void* page = get_page(cursor->table->pager, page_number);
 
     return leaf_node_value(page, cursor->cell_number);
 }
 
 /* advances the cursor to the next row */
 void cursor_advance(Cursor* cursor) {
-    void* node = get_page(cursor->table->pager, cursor->page_number);
+    uint32_t page_number = cursor->page_number;
+    void* node = get_page(cursor->table->pager, page_number);
 
-    cursor->cell_number++;
-
-    if(cursor->cell_number >= (*leaf_node_num_cells(node))) {
-        cursor->end_of_table = true;
+    cursor->cell_number += 1;
+    if (cursor->cell_number >= (*leaf_node_num_cells(node))) {
+      cursor->end_of_table = true;
     }
 }

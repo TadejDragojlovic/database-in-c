@@ -5,43 +5,38 @@
 PrepareResult prepare_insert(InputBuffer* input_buffer, Statement* statement) {
     /* inserting into our 1-table database might look something like this `insert 1 placeholder_name placeholder_email` */
     /* we need to *parse* arguments for this specific statement */
+    statement->type = STATEMENT_INSERT;
 
     /* parsing arguments using strtok */
     char* keyword = strtok(input_buffer->buffer, " ");
     char* id_string = strtok(NULL, " ");
-    char* username_string = strtok(NULL, " ");
-    char* email_string = strtok(NULL, " ");
+    char* username = strtok(NULL, " ");
+    char* email = strtok(NULL, " ");
 
     // checking for wrong input
-    if(id_string == NULL || username_string == NULL || email_string == NULL)
+    if (id_string == NULL || username == NULL || email == NULL)
         return PREPARE_SYNTAX_ERROR;
 
     int id = atoi(id_string);
     // checking for negative id error
-    if(id < 0)
+    if (id < 0)
         return PREPARE_NEGATIVE_ID;
 
     // checking for buffer overflow when inserting username or email
-    if(strlen(username_string) > COLUMN_USERNAME_SIZE || strlen(email_string) > COLUMN_EMAIL_SIZE)
+    if (strlen(username) > COLUMN_USERNAME_SIZE || strlen(email) > COLUMN_EMAIL_SIZE)
         return PREPARE_STRING_TOO_LONG;
 
-
     statement->row_to_insert.id = id;
-    strcpy(statement->row_to_insert.username, username_string);
-    strcpy(statement->row_to_insert.email, email_string);
+    strcpy(statement->row_to_insert.username, username);
+    strcpy(statement->row_to_insert.email, email);
 
-    // printf("%d %d %d\n", ID_SIZE, USERNAME_SIZE, EMAIL_SIZE);
-    // printf("%d %d %d\n", ID_OFFSET, USERNAME_OFFSET, EMAIL_OFFSET);
-    // printf("TOTAL ROW SIZE: %d\n", ROW_SIZE);
-
-    statement->type = STATEMENT_INSERT;
     return PREPARE_SUCCESS;
 }
 
 PrepareResult prepare_statement(InputBuffer* input_buffer, Statement* statement) {
-    if(strncmp(input_buffer->buffer, "insert", 6) == 0) {
+    if (strncmp(input_buffer->buffer, "insert", 6) == 0)
         return prepare_insert(input_buffer, statement);
-    } else if(strncmp(input_buffer->buffer, "select", 6) == 0) {
+    if (strcmp(input_buffer->buffer, "select") == 0) {
         statement->type = STATEMENT_SELECT;
         return PREPARE_SUCCESS;
     }
@@ -50,26 +45,32 @@ PrepareResult prepare_statement(InputBuffer* input_buffer, Statement* statement)
 }
 
 
-
 // VIRTUAL MACHINE PART
 // after compiled statement, this function executes given statements
 ExecuteResult execute_statement(Statement* statement, Table* table) {
-    switch(statement->type) {
-        case(STATEMENT_INSERT):
+    switch (statement->type) {
+        case (STATEMENT_INSERT):
             return execute_insert(statement, table);
-        case(STATEMENT_SELECT):
+        case (STATEMENT_SELECT):
             return execute_select(statement, table);
     }
 }
 
 ExecuteResult execute_insert(Statement* statement, Table* table) {
-    void* node = get_page(table->pager, table->root_page_num);
-    if ((*leaf_node_num_cells(node)) >= LEAF_NODE_MAX_CELLS) {
+    void* node = get_page(table->pager, table->root_page_number);
+    uint32_t num_cells = (*leaf_node_num_cells(node));
+    if (num_cells >= LEAF_NODE_MAX_CELLS)
         return EXECUTE_TABLE_FULL;
-    }
 
     Row* row_to_insert = &(statement->row_to_insert);
-    Cursor* cursor = table_end(table);
+    uint32_t key_to_insert = row_to_insert->id;
+    Cursor* cursor = table_find(table, key_to_insert);
+
+    if (cursor->cell_number < num_cells) {
+        uint32_t key_at_index = *leaf_node_key(node, cursor->cell_number);
+        if (key_at_index == key_to_insert)
+            return EXECUTE_DUPLICATE_KEY;
+    }
 
     leaf_node_insert(cursor, row_to_insert->id, row_to_insert);
 
@@ -79,12 +80,12 @@ ExecuteResult execute_insert(Statement* statement, Table* table) {
     return EXECUTE_SUCCESS;
 }
 
-ExecuteResult execute_select(Statement* prepared_statement, Table* table) {
+ExecuteResult execute_select(Statement* statement, Table* table) {
     Cursor* cursor = table_start(table);
 
     Row row;
-    while(!(cursor->end_of_table)) {
-        row_deserialization(cursor_position(cursor), &row);
+    while (!(cursor->end_of_table)) {
+        deserialize_row(cursor_position(cursor), &row);
         print_row(&row);
         cursor_advance(cursor);
     }
