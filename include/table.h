@@ -72,6 +72,7 @@ static const uint32_t PAGE_SIZE = 4096;
 void serialize_row(Row* source, void* destination);
 void deserialize_row(void* source, Row* destination);
 void* get_page(Pager* pager, uint32_t page_number);
+uint32_t get_unused_page_number(Pager* pager);
 Table* db_open(const char* filename);
 void db_close(Table* table);
 

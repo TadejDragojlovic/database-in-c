@@ -50,6 +50,11 @@ void* get_page(Pager* pager, uint32_t page_number) {
     return pager->pages[page_number];
 }
 
+/* returns the index of the first unused page number [uint32_t] */
+uint32_t get_unused_page_number(Pager* pager) {
+    return pager->page_count;
+}
+
 /* immediately calls 'pager_open()' that reads data from the database file
 and fills the table with that cached data */
 Table* db_open(const char* filename) {
