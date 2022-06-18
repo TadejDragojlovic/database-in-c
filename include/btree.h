@@ -44,9 +44,9 @@ static const uint32_t INTERNAL_NODE_RIGHT_CHILD_OFFSET = COMMON_NODE_HEADER_SIZE
 static const uint32_t INTERNAL_NODE_HEADER_SIZE = COMMON_NODE_HEADER_SIZE + INTERNAL_NODE_NUM_KEYS_SIZE + INTERNAL_NODE_RIGHT_CHILD_SIZE;
 
 /* Internal node body layout */
-const uint32_t INTERNAL_NODE_KEY_SIZE = sizeof(uint32_t);
-const uint32_t INTERNAL_NODE_CHILD_SIZE = sizeof(uint32_t);
-const uint32_t INTERNAL_NODE_CELL_SIZE = INTERNAL_NODE_KEY_SIZE + INTERNAL_NODE_CHILD_SIZE;
+static const uint32_t INTERNAL_NODE_KEY_SIZE = sizeof(uint32_t);
+static const uint32_t INTERNAL_NODE_CHILD_SIZE = sizeof(uint32_t);
+static const uint32_t INTERNAL_NODE_CELL_SIZE = INTERNAL_NODE_KEY_SIZE + INTERNAL_NODE_CHILD_SIZE;
 
 
 
@@ -66,6 +66,9 @@ void initialize_leaf_node(void* node);
 // internal node
 uint32_t* internal_node_num_keys(void* node);
 uint32_t* internal_node_right_child(void* node);
+uint32_t* internal_node_cell(void* node, uint32_t cell_number);
+uint32_t* internal_node_child(void* node, uint32_t child_number);
+uint32_t* internal_node_key(void* node, uint32_t key_number);
 void initialize_internal_node(void* node);
 
 void leaf_node_insert(Cursor* cursor, uint32_t key, Row* value);

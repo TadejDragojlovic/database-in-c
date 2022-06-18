@@ -61,6 +61,7 @@ void* leaf_node_value(void* node, uint32_t cell_number) {
 /* initialize inputed leaf node */
 void initialize_leaf_node(void* node) {
     set_node_type(node, NODE_LEAF);
+    set_node_root(node, false);
     *leaf_node_num_cells(node) = 0;
 }
 
@@ -76,6 +77,37 @@ uint32_t* internal_node_num_keys(void* node) {
 /* returns a pointer to the pointer of the right child of a given internal node [uint32*t] */
 uint32_t* internal_node_right_child(void* node) {
     return node + INTERNAL_NODE_RIGHT_CHILD_OFFSET;
+}
+
+/* returns a pointer to the cell with a certain cell_number in a given internal node [uint32_t*] */
+uint32_t* internal_node_cell(void* node, uint32_t cell_number) {
+    return node + INTERNAL_NODE_HEADER_SIZE + (cell_number * INTERNAL_NODE_CELL_SIZE);
+}
+
+/* TODO: FIGURE THIS OUT AND DOCUMENT */
+uint32_t* internal_node_child(void* node, uint32_t child_number) {
+    uint32_t num_keys = *internal_node_num_keys(node);
+    if (child_number > num_keys) {
+        printf("Tried to access child_number %d > num_keys %d.\n", child_number, num_keys);
+        exit(EXIT_FAILURE);
+    } else if (child_number == num_keys)
+        return internal_node_right_child(node);
+    else 
+        return internal_node_cell(node, child_number);
+}
+
+/* */
+uint32_t* internal_node_key(void* node, uint32_t key_number) {
+    return internal_node_cell(node, key_number) + INTERNAL_NODE_CHILD_SIZE;
+}
+
+uint32_t get_node_max_key(void* node) {
+    switch (get_node_type(node)) {
+        case NODE_INTERNAL:
+            return *internal_node_key(node, *internal_node_num_keys(node)-1);
+        case NODE_LEAF:
+            return *leaf_node_key(node, *leaf_node_num_cells(node)-1);
+    }
 }
 
 
@@ -98,7 +130,8 @@ void leaf_node_insert(Cursor* cursor, uint32_t key, Row* value) {
     uint32_t num_cells = *leaf_node_num_cells(node);
     if (num_cells >= LEAF_NODE_MAX_CELLS) {
         // Leaf node full, should split
-        /* TODO: */
+        /* TODO: test */
+        printf("AAAAAAAAAAA.\n");
         leaf_node_split_and_insert(cursor, key, value);
         return;
     }
@@ -212,7 +245,7 @@ void create_new_root(Table* table, uint32_t right_child_page_number) {
     memcpy(left_child, root, PAGE_SIZE);
     set_node_root(left_child, false);
 
-    initialize_internal_node(void* root);
+    initialize_internal_node(root);
     set_node_root(root, true);
 
     *internal_node_num_keys(root) = 1;
@@ -231,7 +264,7 @@ bool is_node_root(void* node) {
     return (bool)value;
 }
 
-/* sets the given node to the value of 'is_root' bool */
+/* sets the given node to the value of 'is_root' [bool] */
 void set_node_root(void* node, bool is_root) {
     uint8_t value = is_root;
     *((uint8_t*)(node + IS_ROOT_OFFSET)) = value;
