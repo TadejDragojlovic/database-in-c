@@ -2,6 +2,7 @@
 todo.txt
 mydb.db
 log/
+vim_session.vim
 gitignore_fix.txt
 test.c
 __pycache__/
