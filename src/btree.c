@@ -22,6 +22,9 @@ void print_leaf_node(void* node) {
     }
 }
 
+
+/* FUNCTIONS TO HANDLE LEAF NODES */
+
 /* get the 'NodeType' of a given node */
 NodeType get_node_type(void* node) {
     uint8_t value = *((uint8_t*)(node + NODE_TYPE_OFFSET));
@@ -60,6 +63,30 @@ void initialize_leaf_node(void* node) {
     set_node_type(node, NODE_LEAF);
     *leaf_node_num_cells(node) = 0;
 }
+
+
+/* FUNCTIONS TO HANDLE INTERNAL NODES */
+
+/* returns a pointer to the number of keys of a given internal node [uint32_t*] */
+uint32_t* internal_node_num_keys(void* node) {
+    // void* node -> pointer to the memory block of the node (where it starts in the memory)
+    return node + INTERNAL_NODE_NUM_KEYS_OFFSET;
+}
+
+/* returns a pointer to the pointer of the right child of a given internal node [uint32*t] */
+uint32_t* internal_node_right_child(void* node) {
+    return node + INTERNAL_NODE_RIGHT_CHILD_OFFSET;
+}
+
+
+/* TODO: */
+void initialize_internal_node(void* node) {
+    set_node_type(node, NODE_INTERNAL);
+    set_node_root(node, false);
+    *internal_node_num_keys(node) = 0;
+}
+
+
 
 
 /* main functions */
@@ -168,7 +195,32 @@ Cursor* leaf_node_find(Table* table, uint32_t page_number, uint32_t key) {
 
 /* creates a new root node TODO: */
 void create_new_root(Table* table, uint32_t right_child_page_number) {
+    /* new root node points to two children */
+    
+    // original page (left node)
+    void* root = get_page(table->pager, table->root_page_number);
+    // new page (right node)
+    void* right_child = get_page(table->pager, right_child_page_number);
 
+    /* new page number for the original child,
+     * transfering old root (original left child) to the new page_number) */
+    uint32_t left_child_page_number = get_unused_page_number(table->pager);
+    void* left_child = get_page(table->pager, left_child_page_number);
+  
+    /* transfering old left child to the new destination, so we can reuse the
+     * root page */
+    memcpy(left_child, root, PAGE_SIZE);
+    set_node_root(left_child, false);
+
+    initialize_internal_node(void* root);
+    set_node_root(root, true);
+
+    *internal_node_num_keys(root) = 1;
+    *internal_node_child(root, 0) = left_child_page_number;
+
+    uint32_t left_child_max_key = get_node_max_key(left_child);
+    *internal_node_key(root, 0) = left_child_max_key;
+    *internal_node_right_child(root) = right_child_page_number;
 }
 
 
