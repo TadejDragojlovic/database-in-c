@@ -88,7 +88,9 @@ void leaf_node_insert(Cursor* cursor, uint32_t key, Row* value) {
     serialize_row(value, leaf_node_value(node, cursor->cell_number));
 }
 
-/* TODO: */
+/* returns a cursor object that is at the position of a desired leaf_node,
+ * if no node with the given id, 
+ * it returns a cursor positioned at where the node should be inserted [Cursor*] */
 Cursor* leaf_node_find(Table* table, uint32_t page_number, uint32_t key) {
     void* node = get_page(table->pager, page_number);
     uint32_t num_cells = *leaf_node_num_cells(node);
@@ -104,6 +106,7 @@ Cursor* leaf_node_find(Table* table, uint32_t page_number, uint32_t key) {
         uint32_t index = (min_index + one_past_max_index) / 2;
         uint32_t key_at_index = *leaf_node_key(node, index);
         if (key == key_at_index) {
+            // found the cell (row)
             cursor->cell_number = index;
             return cursor;
         }
@@ -117,14 +120,14 @@ Cursor* leaf_node_find(Table* table, uint32_t page_number, uint32_t key) {
     return cursor;
 }
 
-/* */
-
+/* checks if the given node is root [bool] */
 bool is_node_root(void* node) {
     uint8_t value = *((uint8_t*)(node + IS_ROOT_OFFSET));
 
     return (bool)value;
 }
 
+/* sets the given node to the value of 'is_root' bool */
 void set_node_root(void* node, bool is_root) {
     uint8_t value = is_root;
     *((uint8_t*)(node + IS_ROOT_OFFSET)) = value;

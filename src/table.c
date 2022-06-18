@@ -1,14 +1,14 @@
 #include "table.h"
 #include "btree.h"
 
-/* Copy values from some 'Row' object to the block of memory (serialize the data) */
+/* copy values from some 'Row' object to the block of memory (serialize the data) */
 void serialize_row(Row* source, void* destination) {
     memcpy(destination+ID_OFFSET, &(source->id), ID_SIZE);
     memcpy(destination+USERNAME_OFFSET, &(source->username), USERNAME_SIZE);
     memcpy(destination+EMAIL_OFFSET, &(source->email), EMAIL_SIZE);
 }
 
-/* Copy values from the memory block into a 'Row' object (deserialize the data) */
+/* copy values from the memory block into a 'Row' object (deserialize the data) */
 void deserialize_row(void* source, Row* destination) {
     // passing addresses to memcpy (destination, source, size_t n)
     memcpy(&(destination->id), source+ID_OFFSET, ID_SIZE);
@@ -166,7 +166,7 @@ void pager_flush(Pager* pager, uint32_t page_number) {
 
 /* Cursor handling --------- */
 
-/* Creates a cursor object that points to the first row of the table */
+/* creates a cursor object that points to the first row of the table */
 Cursor* table_start(Table* table) {
     Cursor* cursor = malloc(sizeof(Cursor));
     cursor->table = table;
@@ -181,7 +181,7 @@ Cursor* table_start(Table* table) {
     return cursor;
 }
 
-/* Creates a cursor object that points to the last row of the table */
+/* creates a cursor object that points to the last row of the table */
 Cursor* table_find(Table* table, uint32_t key) {
     uint32_t root_page_number = table->root_page_number;
     void* root_node = get_page(table->pager, root_page_number);
