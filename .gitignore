@@ -2,6 +2,7 @@
 todo.txt
 mydb.db
 log/
+.ycm_extra_conf.py
 vim_session.vim
 gitignore_fix.txt
 __pycache__/
