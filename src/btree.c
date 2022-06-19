@@ -1,4 +1,5 @@
 #include "btree.h"
+#include <stdlib.h>
 
 /* print all constants in the 'btree.h' file */
 void print_constants() {
@@ -19,6 +20,53 @@ void print_leaf_node(void* node) {
     for (uint32_t i = 0; i < num_cells; i++) {
         uint32_t key = *leaf_node_key(node, i);
         printf("  - %d : %d\n", i, key);
+    }
+}
+
+/* helper function to indent text */
+void indent(uint32_t level) {
+    for (uint32_t i=0; i<level;i++)
+        printf("  ");
+}
+
+/* print the btree '.btree' [void] */
+void print_btree(Pager* pager, uint32_t page_number, uint32_t level) {
+    uint32_t num_keys;
+    uint32_t child;
+
+    void* node = get_page(pager, page_number);
+    switch (get_node_type(node)) {
+        case (NODE_LEAF):
+            num_keys = *leaf_node_num_cells(node);
+
+            indent(level);
+            printf("- leaf (number of keys: %d)\n", num_keys);
+            // print every row in the leaf node
+            for (uint32_t i=0; i<num_keys; i++) {
+                indent(level+1);
+                printf("-> id: %d\n", *leaf_node_key(node, i));
+            }
+
+            break;
+        case (NODE_INTERNAL):
+            num_keys = *internal_node_num_keys(node);
+
+            indent(level);
+            printf("- internal (number of keys: %d)\n", num_keys);
+
+            for (uint32_t i=0; i<num_keys; i++) {
+                // pointer to the child
+                // TODO: REMINDER: TEST THIS PART
+                child = *internal_node_child(node, i);
+                print_btree(pager, child, level+1);
+
+                indent(level+1);
+                printf("- internal key %d\n", *internal_node_key(node, i));
+            }
+
+            child = *internal_node_right_child(node);
+            print_btree(pager, child, level+1);
+            break;
     }
 }
 
@@ -74,7 +122,7 @@ uint32_t* internal_node_num_keys(void* node) {
     return node + INTERNAL_NODE_NUM_KEYS_OFFSET;
 }
 
-/* returns a pointer to the pointer of the right child of a given internal node [uint32*t] */
+/* returns a pointer to the page number for the right child of a given internal node [uint32*t] */
 uint32_t* internal_node_right_child(void* node) {
     return node + INTERNAL_NODE_RIGHT_CHILD_OFFSET;
 }

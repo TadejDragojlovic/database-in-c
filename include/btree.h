@@ -55,6 +55,9 @@ void set_node_type(void* node, NodeType type);
 
 void print_constants();
 void print_leaf_node(void* node);
+void indent(uint32_t level);
+void print_btree(Pager* pager, uint32_t page_number, uint32_t level);
+// void print_btree(Pager* pager, uint32_t page_number, uint32_t indentation_level);
 
 // leaf node
 uint32_t* leaf_node_num_cells(void* node);
