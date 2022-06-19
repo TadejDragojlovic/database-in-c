@@ -84,23 +84,29 @@ uint32_t* internal_node_cell(void* node, uint32_t cell_number) {
     return node + INTERNAL_NODE_HEADER_SIZE + (cell_number * INTERNAL_NODE_CELL_SIZE);
 }
 
-/* TODO: FIGURE THIS OUT AND DOCUMENT */
+/* returns a pointer to a certain child in a given internal node */
 uint32_t* internal_node_child(void* node, uint32_t child_number) {
     uint32_t num_keys = *internal_node_num_keys(node);
     if (child_number > num_keys) {
+        // child_number out of bounds
         printf("Tried to access child_number %d > num_keys %d.\n", child_number, num_keys);
         exit(EXIT_FAILURE);
-    } else if (child_number == num_keys)
+    } else if (child_number == num_keys) {
+        // pointer to the right child of a given internal node
         return internal_node_right_child(node);
-    else 
+    } else {
+        // pointer to the n-th child in the internal node
         return internal_node_cell(node, child_number);
+    }
 }
 
-/* */
+/* returns a pointer to a certain key in a given internal node [uint32_t*] */
 uint32_t* internal_node_key(void* node, uint32_t key_number) {
     return internal_node_cell(node, key_number) + INTERNAL_NODE_CHILD_SIZE;
 }
 
+/* returns the max key (biggest) of a given node, 
+ * the node can be either of type NODE_INTERNAL or NODE_LEAF [uint32_t] */
 uint32_t get_node_max_key(void* node) {
     switch (get_node_type(node)) {
         case NODE_INTERNAL:
@@ -111,13 +117,12 @@ uint32_t get_node_max_key(void* node) {
 }
 
 
-/* TODO: */
+/* just initializes a given internal node [void] */
 void initialize_internal_node(void* node) {
     set_node_type(node, NODE_INTERNAL);
     set_node_root(node, false);
     *internal_node_num_keys(node) = 0;
 }
-
 
 
 
@@ -226,7 +231,10 @@ Cursor* leaf_node_find(Table* table, uint32_t page_number, uint32_t key) {
     return cursor;
 }
 
-/* creates a new root node TODO: */
+/* handles splitting the root,
+ * old root is copied to the new page (it then becomes the left child),
+ * re-initializes the root page to contain the new root node,
+ * new root node points to two children [void] */
 void create_new_root(Table* table, uint32_t right_child_page_number) {
     /* new root node points to two children */
     
