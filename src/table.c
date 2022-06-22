@@ -196,8 +196,7 @@ Cursor* table_find(Table* table, uint32_t key) {
         return leaf_node_find(table, root_page_number, key);
     else {
         /* TODO: */
-        printf("Need to implement searching an internal node.\n");
-        exit(EXIT_FAILURE);
+        return internal_node_find(table, root_page_number, key);
     }
 }
 

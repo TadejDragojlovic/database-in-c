@@ -66,6 +66,11 @@ uint32_t* leaf_node_key(void* node, uint32_t cell_num);
 void* leaf_node_value(void* node, uint32_t cell_num);
 void initialize_leaf_node(void* node);
 
+void leaf_node_insert(Cursor* cursor, uint32_t key, Row* value);
+void leaf_node_split_and_insert(Cursor* cursor, uint32_t key, Row* value);
+Cursor* leaf_node_find(Table* table, uint32_t page_num, uint32_t key);
+
+
 // internal node
 uint32_t* internal_node_num_keys(void* node);
 uint32_t* internal_node_right_child(void* node);
@@ -74,9 +79,8 @@ uint32_t* internal_node_child(void* node, uint32_t child_number);
 uint32_t* internal_node_key(void* node, uint32_t key_number);
 void initialize_internal_node(void* node);
 
-void leaf_node_insert(Cursor* cursor, uint32_t key, Row* value);
-void leaf_node_split_and_insert(Cursor* cursor, uint32_t key, Row* value);
-Cursor* leaf_node_find(Table* table, uint32_t page_num, uint32_t key);
+Cursor* internal_node_find(Table* table, uint32_t page_number, uint32_t key);
+
 
 
 

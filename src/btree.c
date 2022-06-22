@@ -56,7 +56,6 @@ void print_btree(Pager* pager, uint32_t page_number, uint32_t level) {
 
             for (uint32_t i=0; i<num_keys; i++) {
                 // pointer to the child
-                // TODO: REMINDER: TEST THIS PART
                 child = *internal_node_child(node, i);
                 print_btree(pager, child, level+1);
 
@@ -64,6 +63,7 @@ void print_btree(Pager* pager, uint32_t page_number, uint32_t level) {
                 printf("- internal key %d\n", *internal_node_key(node, i));
             }
 
+            // right_child -> biggest key
             child = *internal_node_right_child(node);
             print_btree(pager, child, level+1);
             break;
@@ -140,10 +140,10 @@ uint32_t* internal_node_child(void* node, uint32_t child_number) {
         printf("Tried to access child_number %d > num_keys %d.\n", child_number, num_keys);
         exit(EXIT_FAILURE);
     } else if (child_number == num_keys) {
-        // pointer to the right child of a given internal node
+        // pointer to the index (or number) of the right child of a given internal node
         return internal_node_right_child(node);
     } else {
-        // pointer to the n-th child in the internal node
+        // pointer to the index (page number) of the n-th child in the internal node
         return internal_node_cell(node, child_number);
     }
 }
@@ -183,8 +183,6 @@ void leaf_node_insert(Cursor* cursor, uint32_t key, Row* value) {
     uint32_t num_cells = *leaf_node_num_cells(node);
     if (num_cells >= LEAF_NODE_MAX_CELLS) {
         // Leaf node full, should split
-        /* TODO: test */
-        printf("AAAAAAAAAAA.\n");
         leaf_node_split_and_insert(cursor, key, value);
         return;
     }
@@ -227,7 +225,6 @@ void leaf_node_split_and_insert(Cursor* cursor, uint32_t key, Row* value) {
         if (i == cursor->cell_number)
             serialize_row(value, destination_cell);
         else if (i > cursor->cell_number) {
-            /* REMINDER: */
             memcpy(destination_cell, leaf_node_cell(old_page, i-1), LEAF_NODE_CELL_SIZE);
         } else {
             memcpy(destination_cell, leaf_node_cell(old_page, i), LEAF_NODE_CELL_SIZE);
@@ -278,6 +275,35 @@ Cursor* leaf_node_find(Table* table, uint32_t page_number, uint32_t key) {
     cursor->cell_number = min_index;
     return cursor;
 }
+
+/* */
+Cursor* internal_node_find(Table* table, uint32_t page_number, uint32_t key) {
+    void* node = get_page(table->pager, page_number);
+    uint32_t num_keys = *internal_node_num_keys(node);
+
+    /* Binary search to finx of the child to search */
+    uint32_t min_index = 0;
+    uint32_t max_index = num_keys; /* since there is one more child than the number of keys */
+    while (min_index != max_index) {
+        uint32_t index = (min_index+max_index)/2;
+        uint32_t key_to_right = *internal_node_key(node, index);
+        if (key_to_right >= key)
+            max_index = index;
+        else
+            min_index = index+1;
+    }
+
+    uint32_t child_number = *internal_node_child(node, min_index);
+    void* child = get_page(table->pager, child_number);
+
+    switch (get_node_type(child)) {
+        case NODE_LEAF:
+            return leaf_node_find(table, child_number, key);
+        case NODE_INTERNAL:
+            return internal_node_find(table, child_number, key);
+    }
+}
+
 
 /* handles splitting the root,
  * old root is copied to the new page (it then becomes the left child),
