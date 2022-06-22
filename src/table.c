@@ -172,16 +172,12 @@ void pager_flush(Pager* pager, uint32_t page_number) {
 
 /* Cursor handling --------- */
 
-/* creates a cursor object that points to the first row of the table */
+/* creates a cursor object that points to the first row of node with the min key (0) */
 Cursor* table_start(Table* table) {
-    Cursor* cursor = malloc(sizeof(Cursor));
-    cursor->table = table;
-    cursor->page_number = table->root_page_number;
-    cursor->cell_number = 0;
+    Cursor* cursor = table_find(table, 0);
 
-    void* root_node = get_page(table->pager, table->root_page_number);
-
-    uint32_t num_cells = *leaf_node_num_cells(root_node);
+    void* page = get_page(table->pager, cursor->page_number);
+    uint32_t num_cells = *leaf_node_num_cells(page);
     cursor->end_of_table = (num_cells == 0);
 
     return cursor;
@@ -215,6 +211,13 @@ void cursor_advance(Cursor* cursor) {
 
     cursor->cell_number += 1;
     if (cursor->cell_number >= (*leaf_node_num_cells(node))) {
-      cursor->end_of_table = true;
+        /* next leaf node */
+        uint32_t next_page_number = *leaf_node_next_leaf(node);
+        if (next_page_number == 0)
+            cursor->end_of_table = true;
+        else {
+            cursor->page_number = next_page_number;
+            cursor->cell_number = 0;
+        }
     }
 }

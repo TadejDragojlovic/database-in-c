@@ -96,6 +96,13 @@ void* leaf_node_cell(void* node, uint32_t cell_number) {
     return node + LEAF_NODE_HEADER_SIZE + cell_number * LEAF_NODE_CELL_SIZE;
 }
 
+/* returns the page number of the given leaf's sibling node on the right,
+ * if the inputed node is the rightmost node, it will return 0 (since there is
+ * no sibling node on the right) */
+uint32_t* leaf_node_next_leaf(void* node) {
+    return node + LEAF_NODE_NEXT_LEAF_OFFSET;
+}
+
 /* returns a pointer to inputed cell's key in the memory */
 uint32_t* leaf_node_key(void* node, uint32_t cell_number) {
     return leaf_node_cell(node, cell_number);
@@ -111,6 +118,7 @@ void initialize_leaf_node(void* node) {
     set_node_type(node, NODE_LEAF);
     set_node_root(node, false);
     *leaf_node_num_cells(node) = 0;
+    *leaf_node_next_leaf(node) = 0; // 0 == no sibling
 }
 
 
@@ -209,6 +217,8 @@ void leaf_node_split_and_insert(Cursor* cursor, uint32_t key, Row* value) {
     // pointing to memory block of a new page
     void* new_page = get_page(cursor->table->pager, new_page_number);
     initialize_leaf_node(new_page);
+    *leaf_node_next_leaf(new_page) = *leaf_node_next_leaf(old_page);
+    *leaf_node_next_leaf(old_page) = new_page_number;
 
     // all keys should be equally divided between the two nodes (old and new)
     for (int32_t i = LEAF_NODE_MAX_CELLS; i >= 0; i--) {
@@ -222,9 +232,10 @@ void leaf_node_split_and_insert(Cursor* cursor, uint32_t key, Row* value) {
         void* destination_cell = leaf_node_cell(destination_page, cell_index_within_page);
 
         // when we reach the new cell(row) index
-        if (i == cursor->cell_number)
-            serialize_row(value, destination_cell);
-        else if (i > cursor->cell_number) {
+        if (i == cursor->cell_number) {
+            serialize_row(value, leaf_node_value(destination_page, cell_index_within_page));
+            *leaf_node_key(destination_page, cell_index_within_page) = key;
+        } else if (i > cursor->cell_number) {
             memcpy(destination_cell, leaf_node_cell(old_page, i-1), LEAF_NODE_CELL_SIZE);
         } else {
             memcpy(destination_cell, leaf_node_cell(old_page, i), LEAF_NODE_CELL_SIZE);
