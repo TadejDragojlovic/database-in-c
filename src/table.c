@@ -183,7 +183,7 @@ Cursor* table_start(Table* table) {
     return cursor;
 }
 
-/* creates a cursor object that points to the last row of the table */
+/* creates a cursor object that points to the row with a given key */
 Cursor* table_find(Table* table, uint32_t key) {
     uint32_t root_page_number = table->root_page_number;
     void* root_node = get_page(table->pager, root_page_number);
@@ -191,7 +191,9 @@ Cursor* table_find(Table* table, uint32_t key) {
     if (get_node_type(root_node) == NODE_LEAF)
         return leaf_node_find(table, root_page_number, key);
     else {
-        /* TODO: */
+        /* This means that there are 2 or more leaf nodes, so we start searching
+         * the internal node */
+        printf("Searching an internal node.\n");
         return internal_node_find(table, root_page_number, key);
     }
 }
