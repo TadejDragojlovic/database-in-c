@@ -15,4 +15,6 @@ typedef enum {
 
 MetaCommandResult do_meta_command(InputBuffer* input_buffer, Table* table);
 
+MetaCommandResult page_info_command(InputBuffer* input_buffer, Table* table);
+
 #endif
