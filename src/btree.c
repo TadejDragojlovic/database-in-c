@@ -116,7 +116,7 @@ void initialize_leaf_node(void* node) {
 
 /* FUNCTIONS TO HANDLE INTERNAL NODES */
 
-/* returns pointer to the parent node of a given node [uint32_t*] */
+/* returns pointer to the page number of the parent node of a given node [uint32_t*] */
 uint32_t* node_parent(void* node) {
     return node + PARENT_POINTER_OFFSET;
 }
@@ -137,7 +137,7 @@ uint32_t* internal_node_cell(void* node, uint32_t cell_number) {
     return node + INTERNAL_NODE_HEADER_SIZE + (cell_number * INTERNAL_NODE_CELL_SIZE);
 }
 
-/* returns a pointer to a certain child in a given internal node */
+/* returns a pointer to a certain's child page number in a given internal node */
 uint32_t* internal_node_child(void* node, uint32_t child_number) {
     uint32_t num_keys = *internal_node_num_keys(node);
     if (child_number > num_keys) {
@@ -153,7 +153,8 @@ uint32_t* internal_node_child(void* node, uint32_t child_number) {
     }
 }
 
-/* returns a pointer to a certain key in a given internal node [uint32_t*] */
+/* returns a pointer to a certain key in a given internal node,
+ * key_number is same as child_number [uint32_t*] */
 uint32_t* internal_node_key(void* node, uint32_t key_number) {
     return (void*)internal_node_cell(node, key_number) + INTERNAL_NODE_CHILD_SIZE;
 }
@@ -219,10 +220,15 @@ void leaf_node_split_and_insert(Cursor* cursor, uint32_t key, Row* value) {
   */
 
   void* old_node = get_page(cursor->table->pager, cursor->page_number);
-  uint32_t old_max = get_node_max_key(old_node);
+  uint32_t old_max = get_node_max_key(old_node); // this is the maximum key of the node thats going to split
   printf("OLD MAXIMUM KEY: %d\n", old_max);
-  uint32_t new_page_num = get_unused_page_number(cursor->table->pager);
+
+  uint32_t new_page_num = get_unused_page_number(cursor->table->pager); // this page number is for the new, split node
   void* new_node = get_page(cursor->table->pager, new_page_num);
+  printf("OLD NODE PAGE_NUMBER: %d\nNEW NODE PAGE_NUMBER: %d\n", cursor->page_number, new_page_num);
+  printf("NUMBER OF PAGES: %d\nROOT NODE PAGE NUMBER: %d\n", cursor->table->pager->page_count, cursor->table->root_page_number);
+
+  /* initializing the new node */
   initialize_leaf_node(new_node);
   *node_parent(new_node) = *node_parent(old_node);
   *leaf_node_next_leaf(new_node) = *leaf_node_next_leaf(old_node);
@@ -259,6 +265,8 @@ void leaf_node_split_and_insert(Cursor* cursor, uint32_t key, Row* value) {
   *(leaf_node_num_cells(new_node)) = LEAF_NODE_RIGHT_SPLIT_COUNT;
 
   if (is_node_root(old_node)) {
+    /* Since we split the root node (original leaf node), we need to create
+     * a new, internal node to be the root */
     return create_new_root(cursor->table, new_page_num);
   } else {
     /* REMINDER: Updating parent (adding new key) */
@@ -466,47 +474,22 @@ Cursor* internal_node_find(Table* table, uint32_t page_num, uint32_t key) {
 
 /* returns the index of the child that contains the inputed key [uint32_t] */
 uint32_t internal_node_find_child(void* node, uint32_t key) {
-  /*
-  Return the index of the child which should contain
-  the given key.
-  */
+    uint32_t num_keys = *internal_node_num_keys(node);
 
-  uint32_t num_keys = *internal_node_num_keys(node);
-
-  /* Binary search */
-  uint32_t min_index = 0;
-  uint32_t max_index = num_keys; /* there is one more child than key */
-
-  while (min_index != max_index) {
-    uint32_t index = (min_index + max_index) / 2;
-    uint32_t key_to_right = *internal_node_key(node, index);
-    if (key_to_right >= key) {
-      max_index = index;
-    } else {
-      min_index = index + 1;
+    /* Binary search */
+    uint32_t min_index = 0;
+    uint32_t max_index = num_keys; // since there is one more child than the number of keys
+    while (min_index != max_index) {
+        uint32_t index = (min_index+max_index)/2;
+        uint32_t key_to_right = *internal_node_key(node, index);
+        if (key_to_right >= key)
+            max_index = index;
+        else
+            min_index = index+1;
     }
-  }
 
-  return min_index;
+    return min_index;
 }
-
-/*uint32_t internal_node_find_child(void* node, uint32_t key) {*/
-    /*uint32_t num_keys = *internal_node_num_keys(node);*/
-
-    /*[> Binary search <]*/
-    /*uint32_t min_index = 0;*/
-    /*uint32_t max_index = num_keys; [> since there is one more child than the number of keys <]*/
-    /*while (min_index != max_index) {*/
-        /*uint32_t index = (min_index+max_index)/2;*/
-        /*uint32_t key_to_right = *internal_node_key(node, index);*/
-        /*if (key_to_right >= key)*/
-            /*max_index = index;*/
-        /*else*/
-            /*min_index = index+1;*/
-    /*}*/
-
-    /*return min_index;*/
-/*}*/
 
 
 /* handles splitting the root,
@@ -514,11 +497,14 @@ uint32_t internal_node_find_child(void* node, uint32_t key) {
  * re-initializes the root page to contain the new root node,
  * new root node points to two children [void] */
 void create_new_root(Table* table, uint32_t right_child_page_number) {
-    /* new root node points to two children */
+    /* this function is called only when the original leaf node (root node at the
+     * time of calling) is split, so there is a need for the internal node to become
+     * the root */
     
-    // original page (left node)
+    /* new root node points to two children (left and right child) */
+    /* original page (left node) */
     void* root = get_page(table->pager, table->root_page_number);
-    // new page (right node)
+    /* new page (right node) */
     void* right_child = get_page(table->pager, right_child_page_number);
 
     /* new page number for the original child,
@@ -531,15 +517,20 @@ void create_new_root(Table* table, uint32_t right_child_page_number) {
     memcpy(left_child, root, PAGE_SIZE);
     set_node_root(left_child, false);
 
+    /* initializing the new internal node */
     initialize_internal_node(root);
     set_node_root(root, true);
-
     *internal_node_num_keys(root) = 1;
-    *internal_node_child(root, 0) = left_child_page_number;
 
+    /* setting the first children of the new internal node */
+    *internal_node_child(root, 0) = left_child_page_number;
     uint32_t left_child_max_key = get_node_max_key(left_child);
     *internal_node_key(root, 0) = left_child_max_key;
+
+    /* setting the right child for the new internal node */
     *internal_node_right_child(root) = right_child_page_number;
+
+    /* setting the page_number of a parent node for the left and right child */
     *node_parent(left_child) = table->root_page_number;
     *node_parent(right_child) = table->root_page_number;
 }
