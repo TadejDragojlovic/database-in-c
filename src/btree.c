@@ -10,7 +10,11 @@ void print_page_information(Table* table, uint32_t page_number) {
             print_leaf_node(node);
             break;
         case NODE_INTERNAL:
-            printf("INTERNAL NODE.\n");
+            /* TODO: add right child page number */
+            printf("internal node:\n");
+            printf("  - child count: %d\n", *internal_node_num_keys(node)+1);
+            printf("  - key count: %d\n", *internal_node_num_keys(node));
+            printf("  - right child page number: %d\n", *internal_node_right_child(node));
             break;
     }
 }
@@ -92,47 +96,47 @@ void print_btree(Pager* pager, uint32_t page_num, uint32_t indentation_level) {
 
 /* FUNCTIONS TO HANDLE LEAF NODES */
 
-/* get the 'NodeType' of a given node */
+/* get the 'NodeType' of a given node [NodeType] */
 NodeType get_node_type(void* node) {
     uint8_t value = *((uint8_t*)(node + NODE_TYPE_OFFSET));
 
     return (NodeType)value;
 }
 
-/* set the 'NodeType' of a given node */
+/* set the 'NodeType' of a given node [void] */
 void set_node_type(void* node, NodeType type) {
     uint8_t value = type;
     *((uint8_t*)(node + NODE_TYPE_OFFSET)) = value;
 }
 
-/* returns a pointer to the node's cell number value */
+/* returns a pointer to the node's cell number value [uint32_t*] */
 uint32_t* leaf_node_num_cells(void* node) {
     return node + LEAF_NODE_NUM_CELLS_OFFSET;
 }
 
-/* returns a pointer to the block of memory where a certain (inputed by argument 'cell_number') cell is stored */
+/* returns a pointer to the block of memory where a certain (inputed by argument 'cell_number') cell is stored [void*] */
 void* leaf_node_cell(void* node, uint32_t cell_number) {
     return node + LEAF_NODE_HEADER_SIZE + cell_number * LEAF_NODE_CELL_SIZE;
 }
 
 /* returns the page number of the given leaf's sibling node on the right,
  * if the inputed node is the rightmost node, it will return 0 (since there is
- * no sibling node on the right) */
+ * no sibling node on the right) [uint32_t*] */
 uint32_t* leaf_node_next_leaf(void* node) {
     return node + LEAF_NODE_NEXT_LEAF_OFFSET;
 }
 
-/* returns a pointer to inputed cell's key in the memory */
+/* returns a pointer to inputed cell's key in the memory [uint32_t*] */
 uint32_t* leaf_node_key(void* node, uint32_t cell_number) {
     return leaf_node_cell(node, cell_number);
 }
 
-/* returns a pointer to the block of memory where value of a certain cell is stored (inputed by argument 'cell_number') */
+/* returns a pointer to the block of memory where value of a certain cell is stored (inputed by argument 'cell_number') [void*] */
 void* leaf_node_value(void* node, uint32_t cell_number) {
     return leaf_node_cell(node, cell_number) + LEAF_NODE_KEY_SIZE;
 }
 
-/* initialize inputed leaf node */
+/* initialize inputed leaf node [void] */
 void initialize_leaf_node(void* node) {
     set_node_type(node, NODE_LEAF);
     set_node_root(node, false);
@@ -164,7 +168,7 @@ uint32_t* internal_node_cell(void* node, uint32_t cell_number) {
     return node + INTERNAL_NODE_HEADER_SIZE + (cell_number * INTERNAL_NODE_CELL_SIZE);
 }
 
-/* returns a pointer to a certain's child page number in a given internal node */
+/* returns a pointer to a certain's child page number in a given internal node [uint32_t*] */
 uint32_t* internal_node_child(void* node, uint32_t child_number) {
     uint32_t num_keys = *internal_node_num_keys(node);
     if (child_number > num_keys) {
@@ -219,7 +223,7 @@ void update_internal_node_key(void* node, uint32_t old_key, uint32_t new_key) {
 
 /* main functions */
 
-/* inserts a new leaf node into the structure */
+/* inserts a new leaf node into the structure [void] */
 void leaf_node_insert(Cursor* cursor, uint32_t key, Row* value) {
 
     void* node = get_page(cursor->table->pager, cursor->page_number);
@@ -442,13 +446,16 @@ void internal_node_insert(Table* table, uint32_t parent_page_number, uint32_t ch
     }
 }
 
-/* */
+/* returned cursor object is positioned at the row with the desired key, 
+ * if there isn't a row with the desired key, cursor will point to where that
+ * key should be inserted [Cursor*] */
 Cursor* internal_node_find(Table* table, uint32_t page_num, uint32_t key) {
   void* node = get_page(table->pager, page_num);
 
   uint32_t child_index = internal_node_find_child(node, key);
   uint32_t child_num = *internal_node_child(node, child_index);
   void* child = get_page(table->pager, child_num);
+
   switch (get_node_type(child)) {
     case NODE_LEAF:
       return leaf_node_find(table, child_num, key);
@@ -456,20 +463,6 @@ Cursor* internal_node_find(Table* table, uint32_t page_num, uint32_t key) {
       return internal_node_find(table, child_num, key);
   }
 }
-/*Cursor* internal_node_find(Table* table, uint32_t page_number, uint32_t key) {*/
-    /*void* node = get_page(table->pager, page_number);*/
-
-    /*uint32_t child_index_in_internal = internal_node_find_child(node, key);*/
-    /*uint32_t child_page_number = *internal_node_child(node, child_index_in_internal);*/
-
-    /*void* child = get_page(table->pager, child_page_number);*/
-    /*switch (get_node_type(child)) {*/
-        /*case NODE_LEAF:*/
-            /*return leaf_node_find(table, child_page_number, key);*/
-        /*case NODE_INTERNAL:*/
-            /*return internal_node_find(table, child_page_number, key);*/
-    /*}*/
-/*}*/
 
 /* returns the index (in the internal node) of the child that contains the inputed key [uint32_t] */
 uint32_t internal_node_find_child(void* node, uint32_t key) {
@@ -542,7 +535,7 @@ bool is_node_root(void* node) {
     return (bool)value;
 }
 
-/* sets the given node to the value of 'is_root' [bool] */
+/* sets the given node to the value of 'is_root' [void] */
 void set_node_root(void* node, bool is_root) {
     uint8_t value = is_root;
     *((uint8_t*)(node + IS_ROOT_OFFSET)) = value;
