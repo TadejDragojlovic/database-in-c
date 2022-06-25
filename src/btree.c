@@ -213,9 +213,12 @@ void initialize_internal_node(void* node) {
 void update_internal_node_key(void* node, uint32_t old_key, uint32_t new_key) {
     /* find the `child_index` (child's page number) using the `old_key` to search */
     uint32_t old_child_index = internal_node_find_child(node, old_key);
-    printf("NODE PAGE NUM: %d\n", *internal_node_child(node, 1));
+    /* after split, old_child_index will be updated with the new_key,
+     * and the rightmost children will be the new page (new split node) */
 
-    printf("OLD CHILD INDEX: %d\n", old_child_index);
+    /* prints the `old_child_index` */
+    /*printf("OLD CHILD INDEX: %d\n", old_child_index);*/
+
     /* we change the key of that child to the new key */
     *internal_node_key(node, old_child_index) = new_key;
 }
@@ -251,12 +254,11 @@ void leaf_node_insert(Cursor* cursor, uint32_t key, Row* value) {
  * inserts the new value (row) into one of the two nodes [void] */
 void leaf_node_split_and_insert(Cursor* cursor, uint32_t key, Row* value) {
     /* Create a new node and move half the cells over.
-    *  Insert the new value in one of the two nodes.
-    *  Update parent or create a new parent. */
+     * Insert the new value in one of the two nodes.
+     * Update parent or create a new parent. */
 
     void* old_node = get_page(cursor->table->pager, cursor->page_number);
     uint32_t old_max = get_node_max_key(old_node); // this is the maximum key of the node thats going to split
-    printf("OLD MAXIMUM KEY: %d\n", old_max);
 
     uint32_t new_page_num = get_unused_page_number(cursor->table->pager); // this page number is for the new, split node
     void* new_node = get_page(cursor->table->pager, new_page_num);
@@ -271,8 +273,8 @@ void leaf_node_split_and_insert(Cursor* cursor, uint32_t key, Row* value) {
     *leaf_node_next_leaf(old_node) = new_page_num;
 
     /* All existing keys plus new key should should be divided
-    *  evenly between old (left) and new (right) nodes.
-    *  Starting from the right, move each key to correct position. */
+     * evenly between old (left) and new (right) nodes.
+     * Starting from the right, move each key to correct position. */
 
     // all keys should be equally divided between the two nodes (old and new)
     for (int32_t i = LEAF_NODE_MAX_CELLS; i >= 0; i--) {
@@ -309,7 +311,9 @@ void leaf_node_split_and_insert(Cursor* cursor, uint32_t key, Row* value) {
         uint32_t parent_page_num = *node_parent(old_node);
         uint32_t new_max = get_node_max_key(old_node); // this is the max key from the leaf node that split
         
-        printf("Updating parent node.\nNew key to insert: %d\n", new_max);
+        /* this line prints out the key that's going to be inserted into the parent node */
+        /*printf("New key to insert into the parent node: %d\n", new_max);*/
+
         void* parent = get_page(cursor->table->pager, parent_page_num);
 
         update_internal_node_key(parent, old_max, new_max);
@@ -361,13 +365,14 @@ void internal_node_insert(Table* table, uint32_t parent_page_number, uint32_t ch
     uint32_t original_num_keys = *internal_node_num_keys(parent_page);
     *internal_node_num_keys(parent_page) = original_num_keys + 1;
 
+    /* the `INTERNAL_NODE_MAX_CELLS` should be 511/512 (thats the maximum number
+     * of child pointers that 4096bytes can hold */
     if (original_num_keys >= INTERNAL_NODE_MAX_CELLS) {
         printf("Need to implement splitting internal node.\n");
         exit(EXIT_FAILURE);
     }
 
-    printf("CHILD_MAX_KEY, PAGE: %d, %d\n", child_max_key, child_page_number);
-
+    // obtain the rightmost child node
     uint32_t right_child_page_number = *internal_node_right_child(parent_page);
     void* right_child_page = get_page(table->pager, right_child_page_number);
 

@@ -193,7 +193,6 @@ Cursor* table_find(Table* table, uint32_t key) {
     else {
         /* This means that there are 2 or more leaf nodes, so we start searching
          * the internal node */
-        printf("Searching an internal node.\n");
         return internal_node_find(table, root_page_number, key);
     }
 }
