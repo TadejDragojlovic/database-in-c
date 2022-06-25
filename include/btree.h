@@ -55,9 +55,11 @@ static const uint32_t INTERNAL_NODE_MAX_CELLS = 3;
 
 
 NodeType get_node_type(void* node);
+uint32_t get_node_max_key(void* node);
 void set_node_type(void* node, NodeType type);
 
 void print_constants();
+void print_rightchild_information(Table* table);
 void print_leaf_node(void* node);
 void indent(uint32_t level);
 void print_btree(Pager* pager, uint32_t page_number, uint32_t level);
