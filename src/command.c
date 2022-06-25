@@ -34,7 +34,7 @@ MetaCommandResult page_info_command(InputBuffer* input_buffer, Table* table) {
     char* page_number_string = strtok(NULL, " ");
     if (page_number_string == NULL) {
         /* case if no page number inputed */
-        printf("No page number inputed.\n");
+        printf("Number of pages: %d\nTo get specific page information, use `.pageinfo {page_number}`.\n", table->pager->page_count);
         return META_COMMAND_SUCCESS;
     } else {
         /* if page number was inputed */
