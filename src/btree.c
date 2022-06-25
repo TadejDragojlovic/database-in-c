@@ -250,129 +250,73 @@ void leaf_node_insert(Cursor* cursor, uint32_t key, Row* value) {
 /* creates a new node and move half of the cells over,
  * inserts the new value (row) into one of the two nodes [void] */
 void leaf_node_split_and_insert(Cursor* cursor, uint32_t key, Row* value) {
-  /*
-  Create a new node and move half the cells over.
-  Insert the new value in one of the two nodes.
-  Update parent or create a new parent.
-  */
+    /* Create a new node and move half the cells over.
+    *  Insert the new value in one of the two nodes.
+    *  Update parent or create a new parent. */
 
-  void* old_node = get_page(cursor->table->pager, cursor->page_number);
-  uint32_t old_max = get_node_max_key(old_node); // this is the maximum key of the node thats going to split
-  printf("OLD MAXIMUM KEY: %d\n", old_max);
+    void* old_node = get_page(cursor->table->pager, cursor->page_number);
+    uint32_t old_max = get_node_max_key(old_node); // this is the maximum key of the node thats going to split
+    printf("OLD MAXIMUM KEY: %d\n", old_max);
 
+    uint32_t new_page_num = get_unused_page_number(cursor->table->pager); // this page number is for the new, split node
+    void* new_node = get_page(cursor->table->pager, new_page_num);
 
-  uint32_t new_page_num = get_unused_page_number(cursor->table->pager); // this page number is for the new, split node
-  void* new_node = get_page(cursor->table->pager, new_page_num);
-  printf("OLD NODE PAGE_NUMBER: %d\nNEW NODE PAGE_NUMBER: %d\n", cursor->page_number, new_page_num);
-  printf("NUMBER OF PAGES: %d\n", cursor->table->pager->page_count);
+    /* NOTE: this prints out page numbers of the split nodes */
+    /*printf("Splitting nodes.\nORIGINAL, FULL NODE PAGE_NUMBER (ALSO NEW SPLIT NODE (FIRST HALF) PAGE NUMBER): %d\nNEW SPLIT NODE (OTHER HALF) PAGE_NUMBER: %d\n", cursor->page_number, new_page_num);*/
 
-  /* initializing the new node */
-  initialize_leaf_node(new_node);
-  *node_parent(new_node) = *node_parent(old_node);
-  *leaf_node_next_leaf(new_node) = *leaf_node_next_leaf(old_node);
-  *leaf_node_next_leaf(old_node) = new_page_num;
+    /* initializing the new node */
+    initialize_leaf_node(new_node);
+    *node_parent(new_node) = *node_parent(old_node);
+    *leaf_node_next_leaf(new_node) = *leaf_node_next_leaf(old_node);
+    *leaf_node_next_leaf(old_node) = new_page_num;
 
-  /*
-  All existing keys plus new key should should be divided
-  evenly between old (left) and new (right) nodes.
-  Starting from the right, move each key to correct position.
-  */
-  for (int32_t i = LEAF_NODE_MAX_CELLS; i >= 0; i--) {
-    void* destination_node;
-    if (i >= LEAF_NODE_LEFT_SPLIT_COUNT) {
-      destination_node = new_node;
-    } else {
-      destination_node = old_node;
+    /* All existing keys plus new key should should be divided
+    *  evenly between old (left) and new (right) nodes.
+    *  Starting from the right, move each key to correct position. */
+
+    // all keys should be equally divided between the two nodes (old and new)
+    for (int32_t i = LEAF_NODE_MAX_CELLS; i >= 0; i--) {
+        void* destination_node;
+        if (i >= LEAF_NODE_LEFT_SPLIT_COUNT)
+            destination_node = new_node;
+        else
+            destination_node = old_node;
+
+        uint32_t index_within_node = i % LEAF_NODE_LEFT_SPLIT_COUNT;
+        void* destination = leaf_node_cell(destination_node, index_within_node);
+
+        // when we reach the new cell(row) index
+        if (i == cursor->cell_number) {
+            serialize_row(value, leaf_node_value(destination_node, index_within_node));
+            *leaf_node_key(destination_node, index_within_node) = key;
+        } else if (i > cursor->cell_number)
+            memcpy(destination, leaf_node_cell(old_node, i - 1), LEAF_NODE_CELL_SIZE);
+        else
+            memcpy(destination, leaf_node_cell(old_node, i), LEAF_NODE_CELL_SIZE);
     }
-    uint32_t index_within_node = i % LEAF_NODE_LEFT_SPLIT_COUNT;
-    void* destination = leaf_node_cell(destination_node, index_within_node);
 
-    if (i == cursor->cell_number) {
-      serialize_row(value,
-                    leaf_node_value(destination_node, index_within_node));
-      *leaf_node_key(destination_node, index_within_node) = key;
-    } else if (i > cursor->cell_number) {
-      memcpy(destination, leaf_node_cell(old_node, i - 1), LEAF_NODE_CELL_SIZE);
+    /* Update cell count on both leaf nodes */
+    *(leaf_node_num_cells(old_node)) = LEAF_NODE_LEFT_SPLIT_COUNT;
+    *(leaf_node_num_cells(new_node)) = LEAF_NODE_RIGHT_SPLIT_COUNT;
+
+    // create a new root node that will be the parent of the split nodes
+    if (is_node_root(old_node)) {
+        /* Since we split the root node (original leaf node), we need to create
+         * a new, internal node to be the root */
+        return create_new_root(cursor->table, new_page_num);
     } else {
-      memcpy(destination, leaf_node_cell(old_node, i), LEAF_NODE_CELL_SIZE);
+        /* REMINDER: Updating parent (adding new key to the internal node) */
+        uint32_t parent_page_num = *node_parent(old_node);
+        uint32_t new_max = get_node_max_key(old_node); // this is the max key from the leaf node that split
+        
+        printf("Updating parent node.\nNew key to insert: %d\n", new_max);
+        void* parent = get_page(cursor->table->pager, parent_page_num);
+
+        update_internal_node_key(parent, old_max, new_max);
+        internal_node_insert(cursor->table, parent_page_num, new_page_num);
+        return;
     }
-  }
-
-  /* Update cell count on both leaf nodes */
-  *(leaf_node_num_cells(old_node)) = LEAF_NODE_LEFT_SPLIT_COUNT;
-  *(leaf_node_num_cells(new_node)) = LEAF_NODE_RIGHT_SPLIT_COUNT;
-
-
-  if (is_node_root(old_node)) {
-    /* Since we split the root node (original leaf node), we need to create
-     * a new, internal node to be the root */
-    return create_new_root(cursor->table, new_page_num);
-  } else {
-    /* REMINDER: Updating parent (adding new key to the internal node) */
-    uint32_t parent_page_num = *node_parent(old_node);
-    uint32_t new_max = get_node_max_key(old_node); // this is the max key from the leaf node that split
-    
-    printf("Updating parent node.\nNew key to insert: %d\n", new_max);
-    void* parent = get_page(cursor->table->pager, parent_page_num);
-
-    update_internal_node_key(parent, old_max, new_max);
-    internal_node_insert(cursor->table, parent_page_num, new_page_num);
-    return;
-  }
 }
-/*void leaf_node_split_and_insert(Cursor* cursor, uint32_t key, Row* value) {*/
-    /*[> NOTE: old_page == old_node | new_page == new_node <]*/
-    /*void* old_page = get_page(cursor->table->pager, cursor->page_number);*/
-    /*uint32_t old_max_key = get_node_max_key(old_page);*/
-    /*uint32_t new_page_number = get_unused_page_number(cursor->table->pager);*/
-
-    /*// pointing to memory block of a new page*/
-    /*void* new_page = get_page(cursor->table->pager, new_page_number);*/
-    /*initialize_leaf_node(new_page);*/
-    /**node_parent(new_page) = *node_parent(old_page);*/
-    /**leaf_node_next_leaf(new_page) = *leaf_node_next_leaf(old_page);*/
-    /**leaf_node_next_leaf(old_page) = new_page_number;*/
-
-    /*// all keys should be equally divided between the two nodes (old and new)*/
-    /*for (int32_t i = LEAF_NODE_MAX_CELLS; i >= 0; i--) {*/
-        /*void* destination_page;*/
-        /*if (i >= LEAF_NODE_LEFT_SPLIT_COUNT)*/
-            /*destination_page = new_page;*/
-        /*else*/
-            /*destination_page = old_page;*/
-
-        /*uint32_t cell_index_within_page = i % LEAF_NODE_LEFT_SPLIT_COUNT;*/
-        /*void* destination_cell = leaf_node_cell(destination_page, cell_index_within_page);*/
-
-        /*// when we reach the new cell(row) index*/
-        /*if (i == cursor->cell_number) {*/
-            /*serialize_row(value, leaf_node_value(destination_page, cell_index_within_page));*/
-            /**leaf_node_key(destination_page, cell_index_within_page) = key;*/
-        /*} else if (i > cursor->cell_number) {*/
-            /*memcpy(destination_cell, leaf_node_cell(old_page, i-1), LEAF_NODE_CELL_SIZE);*/
-        /*} else {*/
-            /*memcpy(destination_cell, leaf_node_cell(old_page, i), LEAF_NODE_CELL_SIZE);*/
-        /*}*/
-    /*}*/
-
-    /*// update cell count in each node's header*/
-    /**(leaf_node_num_cells(old_page)) = LEAF_NODE_LEFT_SPLIT_COUNT;*/
-    /**(leaf_node_num_cells(new_page)) = LEAF_NODE_RIGHT_SPLIT_COUNT;*/
-
-    /*// create a new root node that will be the parent of the split nodes*/
-    /*if (is_node_root(old_page))*/
-        /*return create_new_root(cursor->table, new_page_number);*/
-    /*else {*/
-        /*uint32_t parent_page_number = *node_parent(old_page);*/
-        /*uint32_t new_max_key = get_node_max_key(old_page);*/
-        /*void* parent = get_page(cursor->table->pager, parent_page_number);*/
-
-        /*update_internal_node_key(old_page, old_max_key, new_max_key);*/
-        /*internal_node_insert(cursor->table, parent_page_number, new_page_number);*/
-        /*printf("Splitting the parent.\n");*/
-        /*return;*/
-    /*}*/
-/*}*/
 
 /* returns a cursor object that is at the position of a desired leaf_node,
  * if no node with the given id, 
