@@ -1,6 +1,20 @@
 #include "btree.h"
 #include <stdlib.h>
 
+/* helper function to quickly print information about a given page [void] */
+void print_page_information(Table* table, uint32_t page_number) {
+    void* node = get_page(table->pager, page_number);
+
+    switch (get_node_type(node)) {
+        case NODE_LEAF:
+            print_leaf_node(node);
+            break;
+        case NODE_INTERNAL:
+            printf("INTERNAL NODE.\n");
+            break;
+    }
+}
+
 /* print all constants in the 'btree.h' file [void] */
 void print_constants() {
     printf("ROW_SIZE: %d\n", ROW_SIZE);
@@ -21,7 +35,7 @@ void print_rightchild_information(Table* table) {
         uint32_t rcpn = *internal_node_right_child(root_node);
         void* right_child = get_page(table->pager, rcpn);
         printf("RIGHT CHILD NODE MAX_KEY: %d\n", get_node_max_key(right_child));
-        printf("RIGHT CHILD NODE NUM CELLS: %d\n", *leaf_node_num_cells(right_child));
+        printf("RIGHT CHILD NODE NUMBER OF KEYS: %d\n", *leaf_node_num_cells(right_child));
     }
 }
 
