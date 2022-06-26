@@ -8,11 +8,11 @@ import tests
 TODO: Add further checking if '-t' input file is correct and exists
 '''
 
-def compile():
+def build():
     '''
     compile the program with makefile
     '''
-    os.system('make compile')
+    os.system('make build')
 
 def cleanup():
     '''
@@ -53,7 +53,7 @@ def test_evaluation(output, expected):
 
 
 if __name__ == "__main__":
-    compile()
+    build()
     run_exe = './db'
 
     # RUNNING TESTS
