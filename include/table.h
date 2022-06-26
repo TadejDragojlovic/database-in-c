@@ -16,7 +16,11 @@
 #define COLUMN_USERNAME_SIZE 32
 #define COLUMN_EMAIL_SIZE 255
 
-#define TABLE_MAX_PAGES 100
+/* 1 page for internal root node
+ * 512 child nodes (511 child pointers/key pairs, and 1 for the right child pointer) can fit in
+ * the 1 internal node of 4096bytes */
+/* 600 is just a random number that is over 513, used for further testing */
+#define TABLE_MAX_PAGES 600
 
 // `(Struct*)0` => struct pointer
 // `(((Struct*)0)->Attribute)` => pointer to that specific attribute of a given struct

@@ -50,7 +50,7 @@ static const uint32_t INTERNAL_NODE_KEY_SIZE = sizeof(uint32_t);
 static const uint32_t INTERNAL_NODE_CHILD_SIZE = sizeof(uint32_t);
 static const uint32_t INTERNAL_NODE_CELL_SIZE = INTERNAL_NODE_KEY_SIZE + INTERNAL_NODE_CHILD_SIZE;
 
-static const uint32_t INTERNAL_NODE_MAX_CELLS = 3;
+static const uint32_t INTERNAL_NODE_MAX_CELLS = 511;
 
 
 void print_page_information(Table* table, uint32_t page_number);
