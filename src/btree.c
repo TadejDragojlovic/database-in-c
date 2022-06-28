@@ -311,9 +311,6 @@ void leaf_node_split_and_insert(Cursor* cursor, uint32_t key, Row* value) {
         /* REMINDER: Updating parent (adding new key to the internal node) */
         uint32_t parent_page_num = *node_parent(old_node);
         uint32_t new_max = get_node_max_key(old_node); // this is the max key from the leaf node that split
-        
-        /* this line prints out the key that's going to be inserted into the parent node */
-        /*printf("New key to insert into the parent node: %d\n", new_max);*/
 
         void* parent = get_page(cursor->table->pager, parent_page_num);
 
@@ -369,9 +366,9 @@ void internal_node_insert(Table* table, uint32_t parent_page_number, uint32_t ch
     /* the `INTERNAL_NODE_MAX_CELLS` should be 511/512 (thats the maximum number
      * of child pointers that 4096bytes can hold */
     if (original_num_keys >= INTERNAL_NODE_MAX_CELLS) {
+        /* splitting the root internal node */
         internal_node_split_and_insert(table);
         return;
-        /*exit(EXIT_FAILURE);*/
     }
 
     // obtain the rightmost child node
@@ -479,12 +476,12 @@ void create_new_internal_root(Table* table, void* root, uint32_t key, uint32_t l
   /* setting up */
   set_node_root(root, true);
   *internal_node_num_keys(root) = 1;
-  *internal_node_key(root, key);
+  *internal_node_key(root, 0) = key;
 
   *internal_node_child(root, 0) = left_split_pn;
   *internal_node_right_child(root) = right_split_pn;
 
-  printf("NEW ROOT INTERNAL NODE.\n");
+  printf("NEW ROOT INTERNAL NODE CREATED.\n");
 }
 
 /* returned cursor object is positioned at the row with the desired key, 
