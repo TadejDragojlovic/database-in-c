@@ -273,6 +273,9 @@ void leaf_node_split_and_insert(Cursor* cursor, uint32_t key, Row* value) {
     *leaf_node_next_leaf(new_node) = *leaf_node_next_leaf(old_node);
     *leaf_node_next_leaf(old_node) = new_page_num;
 
+    printf("node parent of old node: %d\n", *node_parent(old_node));
+    printf("new page num: %d\n", new_page_num);
+
     /* All existing keys plus new key should should be divided
      * evenly between old (left) and new (right) nodes.
      * Starting from the right, move each key to correct position. */
@@ -311,6 +314,7 @@ void leaf_node_split_and_insert(Cursor* cursor, uint32_t key, Row* value) {
         /* REMINDER: Updating parent (adding new key to the internal node) */
         uint32_t parent_page_num = *node_parent(old_node);
         uint32_t new_max = get_node_max_key(old_node); // this is the max key from the leaf node that split
+        // REMINDER: ^^^ this checks out ^^^
 
         void* parent = get_page(cursor->table->pager, parent_page_num);
 
@@ -371,6 +375,8 @@ void internal_node_insert(Table* table, uint32_t parent_page_number, uint32_t ch
         return;
     }
 
+    /* this is just the standard case when there is a new child/pair to be added */
+
     // obtain the rightmost child node
     uint32_t right_child_page_number = *internal_node_right_child(parent_page);
     void* right_child_page = get_page(table->pager, right_child_page_number);
@@ -428,33 +434,57 @@ void internal_node_split_and_insert(Table* table) {
 
     /* skipping if we run into split internal node, or the most rightchild (the
      * leaf node with the biggest leaf keys */
-    if (get_node_type(node) == NODE_INTERNAL || i==right_split_rightmost_child_pn) { 
+    if (get_node_type(node) == NODE_INTERNAL || i == right_split_rightmost_child_pn) 
       continue;
-    }
+
+    /* OPTIMIZED CODE WILL LOOK SIMILAR TO THIS */
+    /*if (node_max_key == root_first_key) {*/
+      /*printf("LEFTTTTTTTTTTTTTTTTT\n");*/
+       /*left split rightmost child handling */
+      /**internal_node_right_child(left_split) = i;*/
+      /**node_parent(node) = i;*/
+      /*continue;*/
+    /*} else if (i == right_split_rightmost_child_pn) {*/
+      /*printf("RIGHTTTTTTTTTTTTTTT\n");*/
+      /**internal_node_right_child(right_split) = i;*/
+      /**node_parent(node) = i;*/
+      /*continue;*/
+    /*}*/
 
     if (node_max_key > root_first_key) {
-      // right split
+      /* right split handling */
+      /* just a regular child, not the rightmost */
       (*internal_node_num_keys(right_split))++;
       *internal_node_child(right_split, right_split_child_index) = i;
       *internal_node_key(right_split, right_split_child_index) = node_max_key;
       right_split_child_index++;
       *node_parent(node) = right_split_page_num;
     } else if (node_max_key == root_first_key) {
-      // rightmost child page number to be used for the new left split
-      left_split_rightmost_child_pn=i;
+      left_split_rightmost_child_pn = i;
     } else {
-      // left split
+      /* left split handling */
+      /* just a regular child, not the rightmost */
       (*internal_node_num_keys(left_split))++;
       *internal_node_child(left_split, left_split_child_index) = i;
       *internal_node_key(left_split, left_split_child_index) = node_max_key;
       left_split_child_index++;
       *node_parent(node) = left_split_page_num;
+      }
     }
-  }
 
+  /* TODO: */
+  /* THIS IS THE MANUAL WAY, OPTIMIZE THIS -----------------------------*/
   /* setting the right children pointers for new splits */
   *internal_node_right_child(left_split) = left_split_rightmost_child_pn;
   *internal_node_right_child(right_split) = right_split_rightmost_child_pn;
+
+  /* setting the `*node_parent` pointer for the rightmost children of internal
+   * splits */
+  void* node1 = get_page(table->pager, left_split_rightmost_child_pn);
+  void* node2 = get_page(table->pager, right_split_rightmost_child_pn);
+  *node_parent(node1) = left_split_page_num;
+  *node_parent(node2) = right_split_page_num;
+  /* -------------------------------------------------------------------*/
 
   /* TODO: make a helper function (or a meta command) that print every leaf child the
    * internal splits are pointing to */
