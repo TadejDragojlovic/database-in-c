@@ -370,7 +370,6 @@ void internal_node_insert(Table* table, uint32_t parent_page_number, uint32_t ch
      * of child pointers that 4096bytes can hold */
     if (original_num_keys >= INTERNAL_NODE_MAX_CELLS) {
         internal_node_split_and_insert(table);
-        printf("Need to implement splitting internal node.\n");
         return;
         /*exit(EXIT_FAILURE);*/
     }
@@ -415,62 +414,62 @@ void internal_node_split_and_insert(Table* table) {
 
   initialize_internal_node(right_split);
 
+  // this is the key to put into the new internal root node
   uint32_t root_first_key = *internal_node_key(old_root, INTERNAL_NODE_SPLIT_KEY_INDEX);
+  
+  /* TODO: test whether this is always the case */
+  uint32_t right_split_rightmost_child_pn = left_split_page_num-1;
 
-  // TODO: clean this up somehow
-  int k=0;
-  int j=0;
-  int rindex;
-
-  // TODO: find the page numbers of nodes that belong in the right split
-  printf("PAGE COUNT: %d\n", table->pager->page_count);
-  // disregarding the first page (0) because its the root,
-  // also the last (because it is the page of the new right split internal node),
-  // and one before the last should be the rightmost child of the original root
-  // REMINDER: TODO: stupid way of getting the rightmost child, test if it is
-  // always the one before the last
-  for (int32_t i=1; i<table->pager->page_count-3; i++) {
+  int right_split_child_index=0;
+  int left_split_child_index=0;
+  int32_t left_split_rightmost_child_pn;
+  
+  /* we skip the first node since its root, hence the 'i=1' */
+  for (int32_t i=1; i<table->pager->page_count; i++) {
     void* node = get_page(table->pager, i);
     uint32_t node_max_key = get_node_max_key(node);
+
+    /* skipping if we run into split internal node, or the most rightchild (the
+     * leaf node with the biggest leaf keys */
+    if (get_node_type(node) == NODE_INTERNAL || i==right_split_rightmost_child_pn) { 
+      continue;
+    }
 
     if (node_max_key > root_first_key) {
       // right split
       (*internal_node_num_keys(right_split))++;
-      *internal_node_child(right_split, j) = i;
-      *internal_node_key(right_split, j) = node_max_key;
-      j++;
-      // TODO: HARDCODED PAGE NUMBER
+      *internal_node_child(right_split, right_split_child_index) = i;
+      *internal_node_key(right_split, right_split_child_index) = node_max_key;
+      right_split_child_index++;
       *node_parent(node) = right_split_page_num;
     } else if (node_max_key == root_first_key) {
-      // left split right child
-      rindex=i;
+      // rightmost child page number to be used for the new left split
+      left_split_rightmost_child_pn=i;
     } else {
       // left split
       (*internal_node_num_keys(left_split))++;
-      *internal_node_child(left_split, k) = i;
-      *internal_node_key(left_split, k) = node_max_key;
-      k++;
-      // TODO: HARDCODED PAGE NUMBER
+      *internal_node_child(left_split, left_split_child_index) = i;
+      *internal_node_key(left_split, left_split_child_index) = node_max_key;
+      left_split_child_index++;
       *node_parent(node) = left_split_page_num;
     }
   }
 
-  *internal_node_right_child(left_split) = rindex;
-  *internal_node_right_child(right_split) = table->pager->page_count-3;
+  /* setting the right children pointers for new splits */
+  *internal_node_right_child(left_split) = left_split_rightmost_child_pn;
+  *internal_node_right_child(right_split) = right_split_rightmost_child_pn;
 
-  /* NOTE: new split internal nodes point to correct leaf nodes */
+  /* TODO: make a helper function (or a meta command) that print every leaf child the
+   * internal splits are pointing to */
+  /*printf("%d, %d\n%d, %d\n",*/
+          /**internal_node_child(left_split, 0), *internal_node_child(left_split, 1),*/
+          /**internal_node_child(right_split, 0), *internal_node_child(right_split, 1));*/
 
-  printf("%d, %d\n%d, %d\n",
-          *internal_node_child(left_split, 0), *internal_node_child(left_split, 1),
-          *internal_node_child(right_split, 0), *internal_node_child(right_split, 1));
-
-  /* REMINDER: setup the new internal root to the page 0 [DONE ?] */
   create_new_internal_root(table, old_root, root_first_key, left_split_page_num, right_split_page_num);
 
-  *node_parent(left_split) = 0;
-  *node_parent(right_split) = 0;
-
-  printf("OLD ROOT: %d\n", is_node_root(left_split));
+  /* finally setting the parent node pointer for the new splits */
+  *node_parent(left_split) = table->root_page_number;
+  *node_parent(right_split) = table->root_page_number;
 }
 
 /* handles the creation of the new internal node after internal node spliting */
