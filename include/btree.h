@@ -51,7 +51,7 @@ static const uint32_t INTERNAL_NODE_CHILD_SIZE = sizeof(uint32_t);
 static const uint32_t INTERNAL_NODE_CELL_SIZE = INTERNAL_NODE_KEY_SIZE + INTERNAL_NODE_CHILD_SIZE;
 
 /* this should be 511/512 */
-static const uint32_t INTERNAL_NODE_MAX_CELLS = 2;
+static const uint32_t INTERNAL_NODE_MAX_CELLS = 3;
 
 /* INTERNAL NODE SPLIT */
 static const uint32_t INTERNAL_NODE_SPLIT_KEY_INDEX = (INTERNAL_NODE_MAX_CELLS+1)/2;
@@ -101,7 +101,7 @@ void update_internal_node_key(void* node, uint32_t old_key, uint32_t new_key);
 void initialize_internal_node(void* node);
 
 void internal_node_insert(Table* table, uint32_t parent_page_number, uint32_t child_page_number);
-void internal_node_split_and_insert(Table* table);
+void internal_node_split_and_insert(Table* table, uint32_t node_page_number);
 void create_new_internal_root(Table* table, void* root, uint32_t key, uint32_t left_split_pn, uint32_t right_split_pn);
 Cursor* internal_node_find(Table* table, uint32_t page_number, uint32_t key);
 uint32_t internal_node_find_child(void* node, uint32_t key);
