@@ -50,7 +50,7 @@ static const uint32_t INTERNAL_NODE_KEY_SIZE = sizeof(uint32_t);
 static const uint32_t INTERNAL_NODE_CHILD_SIZE = sizeof(uint32_t);
 static const uint32_t INTERNAL_NODE_CELL_SIZE = INTERNAL_NODE_KEY_SIZE + INTERNAL_NODE_CHILD_SIZE;
 
-/* this should be 511/512
+/* this should be 511/512 */
 static const uint32_t INTERNAL_NODE_MAX_CELLS = 2;
 
 /* INTERNAL NODE SPLIT */
