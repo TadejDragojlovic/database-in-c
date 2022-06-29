@@ -1,13 +1,21 @@
 #include "btree.h"
 #include <stdlib.h>
 
+// #define LEAF_NODE_CONTENT
+
 /* helper function to quickly print information about a given page [void] */
 void print_page_information(Table* table, uint32_t page_number) {
     void* node = get_page(table->pager, page_number);
 
     switch (get_node_type(node)) {
         case NODE_LEAF:
+            printf("leaf node:\n");
+            printf("  - row count: %d\n", *leaf_node_num_cells(node));
+            printf("  - max key: %d\n", *leaf_node_key(node, *leaf_node_num_cells(node)-1));
+            printf("  - sibling page number: %d\n", *leaf_node_next_leaf(node));
+#ifdef LEAF_NODE_CONTENT
             print_leaf_node(node);
+#endif
             break;
         case NODE_INTERNAL:
             /* TODO: add right child page number */
