@@ -62,7 +62,6 @@ static const uint32_t INTERNAL_NODE_LEFT_SPLIT_KEY_COUNT = INTERNAL_NODE_MAX_CEL
 
 void print_page_information(Table* table, uint32_t page_number);
 void print_constants();
-void print_rightchild_information(Table* table);
 void print_leaf_node(void* node);
 void print_internal_node(void* node);
 void indent(uint32_t level);

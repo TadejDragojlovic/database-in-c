@@ -46,24 +46,10 @@ void print_constants() {
     printf("LEAF_NODE_MAX_CELLS: %d\n", LEAF_NODE_MAX_CELLS);
 }
 
-/* print some information about the rightmost child from the root internal node [void] */
-void print_rightchild_information(Table* table) {
-    if (table->pager->page_count < 3) {
-        printf("Root node is not internal.\n");
-        exit(EXIT_FAILURE);
-    } else {
-        void* root_node = get_page(table->pager, table->root_page_number);
-        uint32_t rcpn = *internal_node_right_child(root_node);
-        void* right_child = get_page(table->pager, rcpn);
-        printf("RIGHT CHILD NODE MAX_KEY: %d\n", get_node_max_key(right_child));
-        printf("RIGHT CHILD NODE NUMBER OF KEYS: %d\n", *leaf_node_num_cells(right_child));
-    }
-}
-
 /* print information about given leaf node structure [void] */
 void print_leaf_node(void* node) {
     uint32_t num_cells = *leaf_node_num_cells(node);
-    printf("leaf (size %d)\n", num_cells);
+    printf("|DEBUG|\nleaf (size %d)\n", num_cells);
 
     for (uint32_t i = 0; i < num_cells; i++) {
         uint32_t key = *leaf_node_key(node, i);
@@ -316,20 +302,13 @@ void leaf_node_split_and_insert(Cursor* cursor, uint32_t key, Row* value) {
     uint32_t new_page_num = get_unused_page_number(cursor->table->pager); // this page number is for the new, split node
     void* new_node = get_page(cursor->table->pager, new_page_num);
 
-    printf("OLD NODE, NEW NODE NUM: %d, %d\n", cursor->page_number, new_page_num);
-
-    /* NOTE: this prints out page numbers of the split nodes */
-    /*printf("Splitting nodes.\nORIGINAL, FULL NODE PAGE_NUMBER (ALSO NEW SPLIT NODE (FIRST HALF) PAGE NUMBER): %d\nNEW SPLIT NODE (OTHER HALF) PAGE_NUMBER: %d\n", cursor->page_number, new_page_num);*/
-
     /* initializing the new node */
     initialize_leaf_node(new_node);
 
-    /* FIXME: PROBLEM ? */
     /* puts old parent as the parent instead of the new internal node */
     *node_parent(new_node) = *node_parent(old_node);
 
 
-    printf("PARENT: %d\n", *node_parent(new_node));
     *leaf_node_next_leaf(new_node) = *leaf_node_next_leaf(old_node);
     *leaf_node_next_leaf(old_node) = new_page_num;
 
@@ -464,7 +443,7 @@ void internal_node_insert(Table* table, uint32_t parent_page_number, uint32_t ch
 }
 
 /* Handles the splitting of the internal and potentially creating the new internal node root,
- * `node_page_number` => the internal node that we want to split */
+ * `node_page_number` => the internal node that we want to split [void] */
 void internal_node_split_and_insert(Table* table, uint32_t node_page_number) {
     void* given_node = get_page(table->pager, node_page_number);
 
@@ -514,28 +493,28 @@ void internal_node_split_and_insert(Table* table, uint32_t node_page_number) {
                     // this is the rightmost child for the left split
                     *internal_node_right_child(left_split) = current_pn;
                     *node_parent(node) = left_split_page_num;
+                } else {
+                    // copy to left split
+                    (*internal_node_num_keys(left_split))++;
+                    *internal_node_child(left_split, count) = current_pn;
+                    *internal_node_key(left_split, count) = node_max_key;
+                    *node_parent(node) = left_split_page_num;
+                }
             } else {
-                // copy to left split
-                (*internal_node_num_keys(left_split))++;
-                *internal_node_child(left_split, count) = current_pn;
-                *internal_node_key(left_split, count) = node_max_key;
-                *node_parent(node) = left_split_page_num;
-            }
-            } else {
-            /* since the number of children is always +1 on the number of cells in
-            * internal node (basically checks if its the last child) */
-            if (count == INTERNAL_NODE_MAX_CELLS+1) {
-                // this is the rightmost child for the right split
-                *internal_node_right_child(right_split) = current_pn;
-                *node_parent(node) = right_split_page_num;
-            } else {
-                // copy to right split
-                (*internal_node_num_keys(right_split))++;
-                *internal_node_child(right_split, right_split_child_index) = current_pn;
-                *internal_node_key(right_split, right_split_child_index) = node_max_key;
-                right_split_child_index++;
-                *node_parent(node) = right_split_page_num;
-            }
+                /* since the number of children is always +1 on the number of cells in
+                 * internal node (basically checks if its the last child) */
+                if (count == INTERNAL_NODE_MAX_CELLS+1) {
+                    // this is the rightmost child for the right split
+                    *internal_node_right_child(right_split) = current_pn;
+                    *node_parent(node) = right_split_page_num;
+                } else {
+                    // copy to right split
+                    (*internal_node_num_keys(right_split))++;
+                    *internal_node_child(right_split, right_split_child_index) = current_pn;
+                    *internal_node_key(right_split, right_split_child_index) = node_max_key;
+                    right_split_child_index++;
+                    *node_parent(node) = right_split_page_num;
+                }
             }
 
             current_pn = *leaf_node_next_leaf(node);

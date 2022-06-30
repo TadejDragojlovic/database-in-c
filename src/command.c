@@ -16,10 +16,6 @@ MetaCommandResult do_meta_command(InputBuffer* input_buffer, Table* table) {
         printf("Constants:\n");
         print_constants();
         return META_COMMAND_SUCCESS;
-    } else if (strcmp(input_buffer->buffer, ".rightchild") == 0) {
-        printf("Internal->right_child information:\n");
-        print_rightchild_information(table);
-        return META_COMMAND_SUCCESS;
     } else if (strncmp(input_buffer->buffer, ".pageinfo", 9) == 0) {
         return page_info_command(input_buffer, table);
     } else {
