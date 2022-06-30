@@ -12,6 +12,9 @@ all: build
 build: 
 	$(CC) $(SOURCES) $(CFLAGS) -o $(EXENAME)
 
+debug:
+	$(CC) $(SOURCES) -DDEBUG_NODE_INFO $(CFLAGS) -o $(EXENAME)
+
 run:
 	./$(EXENAME)
 
