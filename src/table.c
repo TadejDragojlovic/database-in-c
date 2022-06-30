@@ -62,6 +62,7 @@ Table* db_open(const char* filename) {
 
     Table* table = malloc(sizeof(Table));
     table->pager = pager;
+    table->internal_node_layers = 0;
 
     if (pager->page_count == 0) {
         // New database file. Initialize page 0 as leaf node.

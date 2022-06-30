@@ -44,6 +44,7 @@ typedef struct {
 // Table structure
 typedef struct {
     uint32_t root_page_number;
+    uint32_t internal_node_layers;
     Pager* pager;
 } Table;
 
