@@ -1,7 +1,7 @@
 #include "btree.h"
 #include <stdlib.h>
 
-// #define LEAF_NODE_CONTENT
+#define DEBUG_NODE
 
 /* helper function to quickly print information about a given page [void] */
 void print_page_information(Table* table, uint32_t page_number) {
@@ -15,7 +15,7 @@ void print_page_information(Table* table, uint32_t page_number) {
             printf("  - max key: %d\n", *leaf_node_key(node, *leaf_node_num_cells(node)-1));
             printf("  - sibling page number: %d\n", *leaf_node_next_leaf(node));
             printf("  - parent page number: %d\n", *node_parent(node));
-#ifdef LEAF_NODE_CONTENT
+#ifdef DEBUG_NODE
             print_leaf_node(node);
 #endif
             break;
@@ -26,6 +26,9 @@ void print_page_information(Table* table, uint32_t page_number) {
             printf("  - key count: %d\n", *internal_node_num_keys(node));
             printf("  - right child page number: %d\n", *internal_node_right_child(node));
             printf("  - parent page number: %d\n", *node_parent(node));
+#ifdef DEBUG_NODE
+            print_internal_node(node);
+#endif
             break;
     }
 }
@@ -54,7 +57,7 @@ void print_rightchild_information(Table* table) {
     }
 }
 
-/* print information about given node structure [void] */
+/* print information about given leaf node structure [void] */
 void print_leaf_node(void* node) {
     uint32_t num_cells = *leaf_node_num_cells(node);
     printf("leaf (size %d)\n", num_cells);
@@ -63,6 +66,22 @@ void print_leaf_node(void* node) {
         uint32_t key = *leaf_node_key(node, i);
         printf("  - %d : %d\n", i, key);
     }
+}
+
+/* print information about given internal node structure [void] */
+void print_internal_node(void* node) {
+    uint32_t num_cells = *internal_node_num_keys(node);
+    printf("|DEBUG|\ninternal (size %d)\n", num_cells);
+
+    for (uint32_t i = 0; i < num_cells; i++) {
+        uint32_t key = *internal_node_key(node, i);
+        uint32_t page_num = *internal_node_child(node, i);
+        printf("key, page_number: %d, %d\n", key, page_num);
+    }
+
+    /* for the rightmost child */
+    uint32_t page_num = *internal_node_right_child(node);
+    printf("right child page_number: %d\n", page_num);
 }
 
 /* helper function to indent text [void] */
@@ -302,7 +321,7 @@ void leaf_node_split_and_insert(Cursor* cursor, uint32_t key, Row* value) {
     /* initializing the new node */
     initialize_leaf_node(new_node);
 
-    /* FIXME: PROBLEM */
+    /* FIXME: PROBLEM ? */
     /* puts old parent as the parent instead of the new internal node */
     *node_parent(new_node) = *node_parent(old_node);
 
@@ -516,16 +535,6 @@ void internal_node_split_and_insert(Table* table, uint32_t node_page_number) {
         count++;
     }
 
-    /* TODO: make a helper function (or a meta command) that print every leaf child the
-    * internal splits are pointing to */
-    /*printf("%d, %d\n%d, %d\n",*/
-            /**internal_node_child(left_split, 0), *internal_node_child(left_split, 1),*/
-            /**internal_node_child(right_split, 0), *internal_node_child(right_split, 1));*/
-    /*printf("%d, %d, %d\n%d, %d\n",*/
-            /**internal_node_child(left_split, 0), *internal_node_child(left_split, 1),*/
-            /**internal_node_child(left_split, 2),*/
-            /**internal_node_child(right_split, 0), *internal_node_child(right_split, 1));*/
-
     create_new_internal_root(table, old_root, root_first_key, left_split_page_num, right_split_page_num);
 
     /* finally setting the parent node pointer for the new splits */
@@ -601,8 +610,8 @@ void internal_node_split_and_insert(Table* table, uint32_t node_page_number) {
 
             /* REMINDER: this code fixes the wrong order bug */
             uint32_t given_node_cell_index = internal_node_find_child(parent, given_node_old_max);
-            *internal_node_child(parent, a) = node_page_number;
-            *internal_node_child(parent, a+1) = new_node_page_num;
+            *internal_node_child(parent, given_node_cell_index) = node_page_number;
+            *internal_node_child(parent, given_node_cell_index+1) = new_node_page_num;
         } else {
             int32_t lowest_pn = leaf_node_get_smallest(table, given_node);
             int32_t current_pn = lowest_pn;

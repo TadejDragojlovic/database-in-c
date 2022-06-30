@@ -64,6 +64,7 @@ void print_page_information(Table* table, uint32_t page_number);
 void print_constants();
 void print_rightchild_information(Table* table);
 void print_leaf_node(void* node);
+void print_internal_node(void* node);
 void indent(uint32_t level);
 void print_btree(Pager* pager, uint32_t page_number, uint32_t level);
 
