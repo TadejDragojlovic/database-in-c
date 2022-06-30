@@ -1,6 +1,5 @@
 .vscode
 mydb.db
-log
 testcases/
 f.py
 db
