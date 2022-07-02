@@ -14,18 +14,27 @@ def build():
     '''
     os.system('make build')
 
+def make_dbfile():
+    ''' 
+    creates `testdb.db` file for the testing
+    '''
+    os.system('touch test.db')
+    print(os.system('ls'))
+
 def cleanup():
     '''
     remove the exe of the program after completion
     '''
     os.system('make clean')
+    os.system('rm -r test.db')
+
 
 def test_driver(test_input) -> list:
     '''
     driver function for testing, returns raw output of a single test
     [str]
     '''
-    p = subprocess.Popen(run_exe, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    p = subprocess.Popen(run_syntax, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 
     cmd = '\n'.join(test_input)
     cmd+='\n' # adding this just to fix a bug where last character is ommited
@@ -54,7 +63,8 @@ def test_evaluation(output, expected):
 
 if __name__ == "__main__":
     build()
-    run_exe = './db'
+    make_dbfile()
+    run_syntax = ['./db', 'test.db']
 
     # RUNNING TESTS
     for i in range(len(tests.TESTS)):
@@ -66,6 +76,9 @@ if __name__ == "__main__":
         for j in range(n):
             test_output = test_driver(tests.TESTS[i]['inputs'][j])
             test_expectation = tests.TESTS[i]['expectations'][j]
+
+            # print(test_output)
+            # print(test_expectation)
 
             if test_evaluation(test_output, test_expectation) != True:
                 passing = 0
