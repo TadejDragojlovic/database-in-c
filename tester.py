@@ -19,7 +19,6 @@ def make_dbfile():
     creates `testdb.db` file for the testing
     '''
     os.system('touch test.db')
-    print(os.system('ls'))
 
 def cleanup():
     '''
@@ -68,6 +67,7 @@ if __name__ == "__main__":
 
     # RUNNING TESTS
     for i in range(len(tests.TESTS)):
+        test_name = tests.TESTS[i]['name']
 
         # `n` => number of times './db' is ran in a single test (for multipart testing like writing records to files)
         n = len(tests.TESTS[i]['inputs'])
@@ -85,22 +85,10 @@ if __name__ == "__main__":
         
         # test case result 
         if passing:
-            print(colorama.Fore.GREEN + f"TEST NUMBER ({i+1}) SUCCESSFULLY PASSED." + colorama.Fore.RESET)
+            print(f"TEST ({i+1}): '{test_name}'" + colorama.Fore.GREEN + ' SUCCESSFULLY PASSED.' + colorama.Fore.RESET)
         else:
             print(test_output)
             # print(test_expectation)
-            print(colorama.Fore.RED + "TEST FAILED." + colorama.Fore.RESET)
-
-
-        # try:
-        #     test_output = test_driver(tests.TESTS[i][0])
-        #     test_expectation = tests.TESTS[i][1]
-        # except:
-        #     pass
-
-        # print(test_output)
-        # print(test_expectation)
-        
-        # test_evaluation(test_output, test_expectation, i)
+            print(f"TEST: ({i+1}): '{test_name}'" + colorama.Fore.RED + " FAILED." + colorama.Fore.RESET)
 
     cleanup()
