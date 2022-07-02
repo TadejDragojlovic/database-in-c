@@ -7,7 +7,7 @@
 #include "table.h"
 #include "btree.h"
 
-// success/failure of meta commands
+// Success/failure of meta commands
 typedef enum {
     META_COMMAND_SUCCESS,
     META_COMMAND_UNRECOGNIZED

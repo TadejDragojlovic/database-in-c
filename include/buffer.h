@@ -5,9 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-// structs |
-// --------|
-
+/* Input buffer structure */
 typedef struct {
     char* buffer;
     size_t buffer_length;

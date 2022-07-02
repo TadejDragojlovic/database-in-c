@@ -21,19 +21,18 @@
  * the 1 internal node of 4096bytes */
 #define TABLE_MAX_PAGES 1000 
 
-// `(Struct*)0` => struct pointer
-// `(((Struct*)0)->Attribute)` => pointer to that specific attribute of a given struct
+/* `(Struct*)0` => struct pointer */
+/* `(((Struct*)0)->Attribute)` => pointer to that specific attribute of a given struct */
 #define size_of_attribute(Struct, Attribute) sizeof(((Struct*)0)->Attribute)
 
-// Row structure
+/* Row structure */
 typedef struct {
     uint32_t id;
-    // adding +1 to the total size of `username` and `email` for the null character
     char username[COLUMN_USERNAME_SIZE+1];
     char email[COLUMN_EMAIL_SIZE+1];
 } Row;
 
-// Pager structure
+/* Pager structure */
 typedef struct {
     int file_descriptor;
     uint32_t file_size;
@@ -41,14 +40,14 @@ typedef struct {
     void* pages[TABLE_MAX_PAGES];
 } Pager;
 
-// Table structure
+/* Table structure */
 typedef struct {
     uint32_t root_page_number;
     uint32_t internal_node_layers;
     Pager* pager;
 } Table;
 
-// Cursor structure
+/* Cursor structure */
 typedef struct {
     Table* table;
     uint32_t page_number;
@@ -57,18 +56,18 @@ typedef struct {
 } Cursor;
 
 
-// Row data sizes
+/* Row data sizes */
 static const uint32_t ID_SIZE  = size_of_attribute(Row, id);
 static const uint32_t USERNAME_SIZE  = size_of_attribute(Row, username);
 static const uint32_t EMAIL_SIZE = size_of_attribute(Row, email);
 
-// Row data memory offset
+/* Row data memory offset */
 static const uint32_t ID_OFFSET = 0;
 static const uint32_t USERNAME_OFFSET = offsetof(Row, username);
 static const uint32_t EMAIL_OFFSET = offsetof(Row, email);
 static const uint32_t ROW_SIZE = ID_SIZE+USERNAME_SIZE+EMAIL_SIZE;
 
-// Page constants
+/* Page constants */
 static const uint32_t PAGE_SIZE = 4096;
 
 
@@ -80,11 +79,11 @@ uint32_t get_unused_page_number(Pager* pager);
 Table* db_open(const char* filename);
 void db_close(Table* table);
 
-// pager handling
+/* Pager handling */
 Pager* pager_open(const char* filename);
 void pager_flush(Pager* pager, uint32_t page_number);
 
-// cursor handling
+/* Cursor handling */
 Cursor* table_start(Table* table);
 Cursor* table_find(Table* table, uint32_t key);
 void* cursor_position(Cursor* cursor); // this function used to be `row_slot()`

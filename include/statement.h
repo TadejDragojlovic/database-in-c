@@ -4,7 +4,7 @@
 #include "buffer.h"
 #include "table.h"
 
-// success/failure of statement preparation
+/* Indicates success/failure of statement preparation */
 typedef enum {
     PREPARE_SUCCESS,
     PREPARE_SYNTAX_ERROR,
@@ -13,23 +13,23 @@ typedef enum {
     PREPARE_UNRECOGNIZED_STATEMENT
 } PrepareResult;
 
-// statement execution results
+/* Statement execution results */
 typedef enum {
     EXECUTE_SUCCESS,
     EXECUTE_DUPLICATE_KEY,
     EXECUTE_TABLE_FULL
 } ExecuteResult;
 
-// type of statement
+/* Types of statement */
 typedef enum {
     STATEMENT_INSERT,
     STATEMENT_SELECT
 } StatementType;
 
-// statement struct
+/* Statement structure */
 typedef struct {
     StatementType type;
-    Row row_to_insert; // this is only used by `insert` statement
+    Row row_to_insert;
 } Statement;
 
 void print_row(Row* row);

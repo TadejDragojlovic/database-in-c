@@ -1,14 +1,14 @@
 #include "table.h"
 #include "btree.h"
 
-/* copy values from some 'Row' object to the block of memory (serialize the data) */
+/* copy values from some 'Row' object to the block of memory (serialize the data) [void] */
 void serialize_row(Row* source, void* destination) {
     memcpy(destination+ID_OFFSET, &(source->id), ID_SIZE);
     memcpy(destination+USERNAME_OFFSET, &(source->username), USERNAME_SIZE);
     memcpy(destination+EMAIL_OFFSET, &(source->email), EMAIL_SIZE);
 }
 
-/* copy values from the memory block into a 'Row' object (deserialize the data) */
+/* copy values from the memory block into a 'Row' object (deserialize the data) [void] */
 void deserialize_row(void* source, Row* destination) {
     // passing addresses to memcpy (destination, source, size_t n)
     memcpy(&(destination->id), source+ID_OFFSET, ID_SIZE);
@@ -16,7 +16,7 @@ void deserialize_row(void* source, Row* destination) {
     memcpy(&(destination->email), source+EMAIL_OFFSET, EMAIL_SIZE);
 }
 
-/* returns the address to the raw page data (bytes from memory) of a given page number */
+/* returns the address to the raw page data (bytes from memory) of a given page number [void*] */
 void* get_page(Pager* pager, uint32_t page_number) {
     if (page_number > TABLE_MAX_PAGES) {
         printf("Tried to fetch page number out of bounds. %d > %d\n", page_number, TABLE_MAX_PAGES);
@@ -56,7 +56,7 @@ uint32_t get_unused_page_number(Pager* pager) {
 }
 
 /* immediately calls 'pager_open()' that reads data from the database file
-and fills the table with that cached data */
+and fills the table with that cached data [Table*] */
 Table* db_open(const char* filename) {
     Pager* pager = pager_open(filename);
 
@@ -76,7 +76,7 @@ Table* db_open(const char* filename) {
 
 /* this function will flush (write) the cache to the file, 
 it will free the memory from the pager and table data structures,
-and close the database file at the end */
+and close the database file at the end [void] */
 void db_close(Table* table) {
     Pager* pager = table->pager;
 
@@ -113,7 +113,7 @@ void db_close(Table* table) {
 
 /* Pager handling --------- */
 
-/* opens a file and assigns values to the Pager structure (file_descriptor, file_size, pages) */
+/* opens a file and assigns values to the Pager structure (file_descriptor, file_size, pages) [Pager*] */
 Pager* pager_open(const char* filename) {
     int fd = open(filename,
                   O_RDWR |    // Read/Write mode
@@ -148,7 +148,7 @@ Pager* pager_open(const char* filename) {
     return pager;
 }
 
-/* this function is called upon closing the database, it flushes (writes) database data onto the disk (file) */
+/* this function is called upon closing the database, it flushes (writes) database data onto the disk (file) [void] */
 void pager_flush(Pager* pager, uint32_t page_number) {
     if (pager->pages[page_number] == NULL) {
         printf("Tried to flush null page.\n");
@@ -173,7 +173,7 @@ void pager_flush(Pager* pager, uint32_t page_number) {
 
 /* Cursor handling --------- */
 
-/* creates a cursor object that points to the first row of node with the min key (0) */
+/* creates a cursor object that points to the first row of node with the min key (0) [Cursor*] */
 Cursor* table_start(Table* table) {
     Cursor* cursor = table_find(table, 0);
 
@@ -184,7 +184,7 @@ Cursor* table_start(Table* table) {
     return cursor;
 }
 
-/* creates a cursor object that points to the row with a given key */
+/* creates a cursor object that points to the row with a given key [Cursor*] */
 Cursor* table_find(Table* table, uint32_t key) {
     uint32_t root_page_number = table->root_page_number;
     void* root_node = get_page(table->pager, root_page_number);
@@ -198,7 +198,7 @@ Cursor* table_find(Table* table, uint32_t key) {
     }
 }
 
-/* returns a pointer to an address in the memory where the row which the cursor is pointing to is */
+/* returns a pointer to an address in the memory where the row which the cursor is pointing to is [void*] */
 void* cursor_position(Cursor* cursor) {
     uint32_t page_number = cursor->page_number;
     void* page = get_page(cursor->table->pager, page_number);
@@ -206,7 +206,7 @@ void* cursor_position(Cursor* cursor) {
     return leaf_node_value(page, cursor->cell_number);
 }
 
-/* advances the cursor to the next row */
+/* advances the cursor to the next row [void] */
 void cursor_advance(Cursor* cursor) {
     uint32_t page_number = cursor->page_number;
     void* node = get_page(cursor->table->pager, page_number);

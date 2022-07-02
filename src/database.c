@@ -5,7 +5,7 @@
 
 #include <stdbool.h>
 
-// prints prompt
+/* prints prompt [void] */
 void print_prompt() {
     printf("db > ");
 }
@@ -18,22 +18,21 @@ int main(int argc, char* argv[]) {
 
     char* filename = argv[1];   
 
-    // Create a table
+    /* create a table */
     Table* table = db_open(filename);
-    // printf("New table created.\n");
 
-    // create the input buffer
+    /* create the input buffer */
     InputBuffer* input_buffer = new_input_buffer();
 
     while (true) {
         print_prompt();
 
-        // reading input into the buffer
+        /* reading input into the buffer */
         read_input(input_buffer);
 
-        // meta-commands all start with a dot, so we handle them in a separate function
+        /* meta-commands all start with a dot, so we handle them in a separate function */
         if(input_buffer->buffer[0] == '.') {
-            // `do_meta_command()` function checks input for meta commands
+            /* `do_meta_command()` function checks input for meta commands */
             switch(do_meta_command(input_buffer, table)) {
                 case (META_COMMAND_SUCCESS):
                     continue;
@@ -44,10 +43,10 @@ int main(int argc, char* argv[]) {
         }
 
         Statement statement;
-        // `prepare_statement()` checks input for valid a valid statement and returns appopriate result (PrepareResult enum)
-        // it also assigns the `StatementType` to the given statement container
+        /* `prepare_statement()` checks input for valid a valid statement and returns appopriate result (PrepareResult enum),
+         * it also assigns the `StatementType` to the given statement container */
         switch (prepare_statement(input_buffer, &statement)) {
-            case (PREPARE_SUCCESS): // If the statement succeeds to run, it will break from this switch
+            case (PREPARE_SUCCESS):
                 break;
             case (PREPARE_SYNTAX_ERROR):
                 printf("Syntax error. Couldn't parse the statement.\n");
@@ -58,12 +57,12 @@ int main(int argc, char* argv[]) {
             case (PREPARE_NEGATIVE_ID):
                 printf("Negative ID inserted. ID must be a positive integer.\n");
                 continue;
-            case (PREPARE_UNRECOGNIZED_STATEMENT): // If the statement is unrecognized, it repeats until a known keyword is inputed
+            case (PREPARE_UNRECOGNIZED_STATEMENT):
                 printf("Unrecognized keyword at start of '%s'.\n", input_buffer->buffer);
                 continue;
         }
 
-        // lastly, we pass the prepared statement to `execute_statement` (this function is our virtual machine)
+        /* after preparing the statement, we pass it to the `execute_statement` function, which acts as a virtual machine */
 
         switch (execute_statement(&statement, table)) {
             case (EXECUTE_SUCCESS):
