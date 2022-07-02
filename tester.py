@@ -1,12 +1,10 @@
 import subprocess
 import os
 import colorama
+import time
 
 import tests
 
-'''
-TODO: Add further checking if '-t' input file is correct and exists
-'''
 
 def build():
     '''
@@ -14,17 +12,16 @@ def build():
     '''
     os.system('make build')
 
-def make_dbfile():
-    ''' 
-    creates `testdb.db` file for the testing
-    '''
-    os.system('touch test.db')
 
 def cleanup():
     '''
     remove the exe of the program after completion
     '''
     os.system('make clean')
+    os.system('rm -r test.db')
+
+
+def reset_file():
     os.system('rm -r test.db')
 
 
@@ -61,12 +58,13 @@ def test_evaluation(output, expected):
 
 
 if __name__ == "__main__":
+    total_execution_time = 0
     build()
-    make_dbfile()
     run_syntax = ['./db', 'test.db']
 
     # RUNNING TESTS
     for i in range(len(tests.TESTS)):
+        st = time.monotonic()
         test_name = tests.TESTS[i]['name']
 
         # `n` => number of times './db' is ran in a single test (for multipart testing like writing records to files)
@@ -83,12 +81,16 @@ if __name__ == "__main__":
             if test_evaluation(test_output, test_expectation) != True:
                 passing = 0
         
+        # adding time for i-th test to the total execution time
+        total_execution_time += time.monotonic()-st
+
         # test case result 
         if passing:
             print(f"TEST ({i+1}): '{test_name}'" + colorama.Fore.GREEN + ' SUCCESSFULLY PASSED.' + colorama.Fore.RESET)
         else:
-            print(test_output)
+            # print(test_output)
             # print(test_expectation)
             print(f"TEST: ({i+1}): '{test_name}'" + colorama.Fore.RED + " FAILED." + colorama.Fore.RESET)
+        reset_file()
 
-    cleanup()
+    print(f'Total execution time: {total_execution_time:.5f}s')

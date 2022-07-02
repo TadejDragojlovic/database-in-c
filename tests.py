@@ -80,9 +80,9 @@ TESTS.append({'name': test_name, 'inputs': [_input, _input1], 'expectations': [_
 
 
 
-# #--------------------------------------------
-# # TEST 6 (testing `.constants` meta command)|
-# #--------------------------------------------
+#--------------------------------------------
+# TEST 6 (testing `.constants` meta command)|
+#--------------------------------------------
 test_name = '`.constants` meta command'
 _input = []
 _expect = []
@@ -90,13 +90,63 @@ _expect = []
 _input.append('.constants')
 
 _expect.append('Constants:')
-constants = '''ROW_SIZE: 293\n\
-COMMON_NODE_HEADER_SIZE: 6\n\
-LEAF_NODE_HEADER_SIZE: 14\n\
-LEAF_NODE_CELL_SIZE: 297\n\
-LEAF_NODE_SPACE_FOR_CELLS: 4082\n\
+constants = '''ROW_SIZE: 293
+COMMON_NODE_HEADER_SIZE: 6
+LEAF_NODE_HEADER_SIZE: 14
+LEAF_NODE_CELL_SIZE: 297
+LEAF_NODE_SPACE_FOR_CELLS: 4082
 LEAF_NODE_MAX_CELLS: 13'''.split('\n')
+
 for line in constants:
+    _expect.append(line)
+
+TESTS.append({'name': test_name, 'inputs': [_input], 'expectations': [_expect]})
+
+
+
+#------------------------------------------------------------------------------------
+# TEST 7 (testing `.btree` meta command in a 3-node tree (internal root, and 2 leaf)|
+#------------------------------------------------------------------------------------
+test_name = '`.btree` of a 3-node tree'
+_input = []
+_expect = []
+
+n = 21
+for i in range(1, n+1):
+    _input.append(f"insert {i} user{i} email{i}@gmail.com")
+_input.append('.btree')
+
+_expect = ['Inserted.' for x in range(n)]
+     
+_expect.append('Btree:')
+btree_output = '''- internal (size 2)
+  - leaf (size 7)
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    - 7
+  - key 7
+  - leaf (size 7)
+    - 8
+    - 9
+    - 10
+    - 11
+    - 12
+    - 13
+    - 14
+  - key 14
+  - leaf (size 7)
+    - 15
+    - 16
+    - 17
+    - 18
+    - 19
+    - 20
+    - 21'''.split('\n')
+for line in btree_output:
     _expect.append(line)
 
 TESTS.append({'name': test_name, 'inputs': [_input], 'expectations': [_expect]})
