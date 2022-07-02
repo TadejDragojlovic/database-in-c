@@ -63,13 +63,16 @@ ExecuteResult execute_statement(Statement* statement, Table* table) {
 
 /* executing the 'insert' statement [ExecuteResult] */
 ExecuteResult execute_insert(Statement* statement, Table* table) {
-    void* node = get_page(table->pager, table->root_page_number);
-    uint32_t num_cells = (*leaf_node_num_cells(node));
-
     Row* row_to_insert = &(statement->row_to_insert);
     uint32_t key_to_insert = row_to_insert->id;
     Cursor* cursor = table_find(table, key_to_insert);
 
+    void* node = get_page(table->pager, cursor->page_number);
+    uint32_t num_cells = (*leaf_node_num_cells(node));
+
+    /* if we have a cursor that's pointing at a cell number lower than the num of cells,
+     * it means we found that exact cell somewhere,
+     * otherwise it will point to the end, where the new cell will settle */
     if (cursor->cell_number < num_cells) {
         uint32_t key_at_index = *leaf_node_key(node, cursor->cell_number);
         if (key_at_index == key_to_insert)
