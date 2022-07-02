@@ -656,7 +656,6 @@ void create_new_root(Table* table, uint32_t right_child_page_number) {
      * time of calling) is split, so there is a need for the internal node to become
      * the root */
     table->internal_node_layers = 1;
-    printf("CREATE_NEW_ROOT\n");
     
     /* new root node points to two children (left and right child) */
     /* original page (left node) */
