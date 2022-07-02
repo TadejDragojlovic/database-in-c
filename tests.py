@@ -32,24 +32,9 @@ _input.append('select')
 TESTS.append({'inputs': [_input], 'expectations': [_expect]})
 
 
-#----------------------------------
-# TEST 3 (testing table row limit)|
-#----------------------------------
-_input = []
-_expect = []
-
-n = 1301
-for i in range(1, n+1):
-    _input.append(f'insert {i} user{i} email{i}@gmail.com')
-
-_expect = ['Inserted.' for x in range(n-1)]
-_expect.append('ERROR. Table is full.')
-
-TESTS.append({'inputs': [_input], 'expectations': [_expect]})
-
 
 #-----------------------------------------------------
-# TEST 4 (testing for buffer overflow when inserting)|
+# TEST 3 (testing for buffer overflow when inserting)|
 #-----------------------------------------------------
 _input = [f"insert 1 {'a'*33} {'b'*256}", "select"]
 _expect = ["String inserted is too long."]
@@ -57,8 +42,9 @@ _expect = ["String inserted is too long."]
 TESTS.append({'inputs': [_input], 'expectations': [_expect]})
 
 
+
 #--------------------------------------------------
-# TEST 5 (testing for negative ids when inserting)|
+# TEST 4 (testing for negative ids when inserting)|
 #--------------------------------------------------
 _input = ["insert -1 some_username foo@gmail.com"]
 _expect = ["Negative ID inserted. ID must be a positive integer."]
@@ -66,15 +52,37 @@ _expect = ["Negative ID inserted. ID must be a positive integer."]
 TESTS.append({'inputs': [_input], 'expectations': [_expect]})
 
 
-#--------------------------------
-# TEST 6 (saving data to a file)|
-#--------------------------------
-# MULTIPART TEST (runs './db' more than once)
-# Tests if data is written on a file correctly and saved
-_input = ["insert 1 cstack foo@gmail.com", ".exit"]
-_expect = ["Inserted."]
+
+#------------------------------------------------
+# TEST 5 (testing if file is saved successfully)|
+#------------------------------------------------
+_input = []
+_expect = []
+
+n = 20
+for i in range(1, n+1):
+    _input.append(f'insert {i} user{i} email{i}@gmail.com')
+
+_expect = ['Inserted.' for x in range(n)]
+_input.append('.exit')
 
 _input1 = ["select"]
-_expect1 = ["(1, cstack, foo@gmail.com)"]
+_expect1 = []
+for i in range(1, n+1):
+    _expect1.append(f'({i}, user{i}, email{i}@gmail.com)')
 
 TESTS.append({'inputs': [_input, _input1], 'expectations': [_expect, _expect1]})
+
+
+# #--------------------------------
+# # TEST 6 (saving data to a file)|
+# #--------------------------------
+# # MULTIPART TEST (runs './db' more than once)
+# # Tests if data is written on a file correctly and saved
+# _input = ["insert 1 cstack foo@gmail.com", ".exit"]
+# _expect = ["Inserted."]
+
+# _input1 = ["select"]
+# _expect1 = ["(1, cstack, foo@gmail.com)"]
+
+# TESTS.append({'inputs': [_input, _input1], 'expectations': [_expect, _expect1]})
