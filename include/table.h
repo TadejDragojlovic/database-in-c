@@ -19,7 +19,7 @@
 /* 1 page for internal root node
  * 512 child nodes (511 child pointers/key pairs, and 1 for the right child pointer) can fit in
  * the 1 internal node of 4096bytes */
-#define TABLE_MAX_PAGES 1000 
+#define TABLE_MAX_PAGES 500000 
 
 /* `(Struct*)0` => struct pointer */
 /* `(((Struct*)0)->Attribute)` => pointer to that specific attribute of a given struct */

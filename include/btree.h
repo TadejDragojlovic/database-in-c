@@ -52,7 +52,7 @@ static const uint32_t INTERNAL_NODE_CELL_SIZE = INTERNAL_NODE_KEY_SIZE + INTERNA
 
 /* the `INTERNAL_NODE_MAX_CELLS` should be 511/512 (thats the maximum number
  * of child pointers that 4096bytes can hold */
-static const uint32_t INTERNAL_NODE_MAX_CELLS = 3;
+static const uint32_t INTERNAL_NODE_MAX_CELLS = 511;
 
 /* INTERNAL NODE SPLIT */
 static const uint32_t INTERNAL_NODE_SPLIT_KEY_INDEX = (INTERNAL_NODE_MAX_CELLS+1)/2;

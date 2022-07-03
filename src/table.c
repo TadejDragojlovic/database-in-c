@@ -25,7 +25,7 @@ void* get_page(Pager* pager, uint32_t page_number) {
 
     if (pager->pages[page_number] == NULL) {
         // Cache miss. Allocate memory and load from file.
-        void* page = malloc(PAGE_SIZE);
+        void* page = (void *) malloc(PAGE_SIZE);
         uint32_t num_pages = pager->file_size / PAGE_SIZE;
 
         // We might save a partial page at the end of the file
@@ -86,8 +86,8 @@ void db_close(Table* table) {
         }
         /*printf("FREEING 1.\n");*/
         pager_flush(pager, i);
-        free(pager->pages[i]);
-        pager->pages[i] = NULL;
+        // free(pager->pages[i]);
+        // pager->pages[i] = NULL;
     }
 
     // closing the database file
@@ -102,7 +102,6 @@ void db_close(Table* table) {
         void* page = pager->pages[i];
         if (page) {
             /* REMINDER:  This code probably doesn't ever run, test more */
-            /*printf("FREEING 2.\n");*/
             free(page);
             pager->pages[i] = NULL;
         }

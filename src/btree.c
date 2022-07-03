@@ -605,7 +605,7 @@ void create_new_internal_root(Table* table, void* root, uint32_t key, uint32_t l
   *internal_node_child(root, 0) = left_split_pn;
   *internal_node_right_child(root) = right_split_pn;
 
-  printf("ROOT INTERNAL NODE SPLIT. NEW ROOT INTERNAL NODE CREATED.\n");
+//   printf("ROOT INTERNAL NODE SPLIT. NEW ROOT INTERNAL NODE CREATED.\n");
 }
 
 /* returned cursor object is positioned at the row with the desired key, 
