@@ -1,7 +1,6 @@
 .vscode
 mydb.db
-testcases/
-f.py
+test/
 db
 .ycm_extra_conf.py
 vim_session.vim
