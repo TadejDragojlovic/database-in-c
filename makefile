@@ -1,5 +1,6 @@
 CC = gcc
-CFLAGS = -I$(IDIR)
+CL = clang
+CFLAGS = -I$(IDIR) -g
 
 IDIR = ./include/
 SRCDIR = ./src/
@@ -8,6 +9,9 @@ EXENAME = db
 SOURCES = $(SRCDIR)*.c
 
 all: build
+
+clang:
+	$(CL) $(SOURCES) $(CFLAGS) -o $(EXENAME)
 
 build: 
 	$(CC) $(SOURCES) $(CFLAGS) -o $(EXENAME)
