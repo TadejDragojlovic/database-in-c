@@ -91,6 +91,8 @@ if __name__ == "__main__":
             print(len(test_output))
             print(len(test_expectation))
             print(f"TEST ({i+1}): '{test_name}'" + colorama.Fore.RED + " FAILED." + colorama.Fore.RESET)
+        # if i != len(tests.TESTS)-1:
+        #     reset_file()
         # reseting the 'test.db' file after every test
         reset_file()
 

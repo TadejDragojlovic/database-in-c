@@ -4,8 +4,8 @@ TESTS = []
 
 '''
 All tests are done on:
-    - TABLE_MAX_PAGES: 50000
-    - INTERNAL_NODE_MAX_CELLS: 511
+    - TABLE_MAX_PAGES: 300000
+    - INTERNAL_NODE_MAX_CELLS: 510
 '''
 
 #---------
