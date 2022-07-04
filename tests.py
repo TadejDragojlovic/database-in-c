@@ -1,5 +1,12 @@
+import random
+
 TESTS = []
 
+'''
+All tests are done on:
+    - TABLE_MAX_PAGES: 50000
+    - INTERNAL_NODE_MAX_CELLS: 511
+'''
 
 #---------
 # TEST 1 |
@@ -104,9 +111,9 @@ TESTS.append({'name': test_name, 'inputs': [_input], 'expectations': [_expect]})
 
 
 
-#------------------------------------------------------------------------------------
-# TEST 7 (testing `.btree` meta command in a 3-node tree (internal root, and 2 leaf)|
-#------------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------------
+# TEST 7 (testing `.btree` meta command in a 3-node tree (internal root, and 2 leaf))|
+#-------------------------------------------------------------------------------------
 test_name = '`.btree` of a 3-node tree'
 _input = []
 _expect = []
@@ -148,5 +155,82 @@ btree_output = '''- internal (size 2)
     - 21'''.split('\n')
 for line in btree_output:
     _expect.append(line)
+
+TESTS.append({'name': test_name, 'inputs': [_input], 'expectations': [_expect]})
+
+
+
+#----------------------------------------------------------------------
+# TEST 8 (testing insertion already inserted keys, duplicate id check)|
+#----------------------------------------------------------------------
+test_name = 'duplicate key/id'
+_input = []
+_expect = []
+
+n = 32
+for i in range(1, n+1):
+    _input.append(f'insert {i} user{i} email{i}@gmail.com')
+_input.append('insert 12 user12 email12@gmail.com')
+_input.append('insert 31 user12 email12@gmail.com')
+_input.append('insert 1 user1 email1@gmail.com')
+_input.append('insert 32 user32 email32@gmail.com')
+
+_expect = ['Inserted.' for x in range(n)]
+for i in range(4):
+    _expect.append('Error: Inserted id already exists in the table.')
+
+TESTS.append({'name': test_name, 'inputs': [_input], 'expectations': [_expect]})
+
+
+
+#-----------------------------------------------------------------------------------------------------
+# TEST 9 (testing 2-internal node layer limit, maxing out leaf nodes, saving it into a file, ~1.07gb)|
+#-----------------------------------------------------------------------------------------------------
+'''
+* Multiple for loops needed to insert in a certain order,
+* if we just try to insert 1827847 rows, we will eventually hit the limit at `920000`
+    -> the reason for this is because the tree is self-balancing, so all internal nodes will have around 256 leaf nodes,
+       only the rightmost child will have 511 leaf nodes
+    -> this happens because we are inserting everything in the order (and each new row id is incremented by 1)
+'''
+test_name = 'max out number of leaf nodes in the table (2-internal node layers)'
+_input = []
+_expect = []
+
+n = 1827847
+
+# part 1
+count = 0
+j = 0
+while j<n+1:
+    if (count > 0 and j%7 == 0):
+        j += 8
+        count = 0
+    else:
+        j += 1
+        count += 1
+    _input.append(f'insert {j} u{j} e{j}')
+    _expect.append('Inserted.')
+
+# part 2
+x = 9
+while x < n+1:
+    for i in range(x, x+6):
+        _input.append(f'insert {i} u{i} e{i}')
+        _expect.append('Inserted.')
+    x+=14
+
+# part 3
+start = 8
+count = 0
+for i in range(start, n+1, 14):
+    if count == 255:
+        count = 0
+        continue
+    _input.append(f'insert {i} u{i} e{i}')
+    _expect.append('Inserted.')
+    count += 1
+
+_input.append('.exit')
 
 TESTS.append({'name': test_name, 'inputs': [_input], 'expectations': [_expect]})

@@ -88,9 +88,10 @@ if __name__ == "__main__":
         if passing:
             print(f"TEST ({i+1}): '{test_name}'" + colorama.Fore.GREEN + ' SUCCESSFULLY PASSED.' + colorama.Fore.RESET)
         else:
-            # print(test_output)
-            # print(test_expectation)
-            print(f"TEST: ({i+1}): '{test_name}'" + colorama.Fore.RED + " FAILED." + colorama.Fore.RESET)
+            print(len(test_output))
+            print(len(test_expectation))
+            print(f"TEST ({i+1}): '{test_name}'" + colorama.Fore.RED + " FAILED." + colorama.Fore.RESET)
+        # reseting the 'test.db' file after every test
         reset_file()
 
     print(f'Total execution time: {total_execution_time:.5f}s')
