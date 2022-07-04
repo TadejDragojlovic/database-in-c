@@ -84,7 +84,6 @@ void db_close(Table* table) {
         if (pager->pages[i] == NULL) {
           continue;
         }
-        /*printf("FREEING 1.\n");*/
         pager_flush(pager, i);
         // free(pager->pages[i]);
         // pager->pages[i] = NULL;
@@ -98,10 +97,9 @@ void db_close(Table* table) {
     }
 
     // Free memory
-    for (uint32_t i = 0; i < TABLE_MAX_PAGES; i++) {
+    for (uint32_t i = 0; i < pager->page_count; i++) {
         void* page = pager->pages[i];
         if (page) {
-            /* REMINDER:  This code probably doesn't ever run, test more */
             free(page);
             pager->pages[i] = NULL;
         }
